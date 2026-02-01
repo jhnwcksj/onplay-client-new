@@ -1,0 +1,140 @@
+/* Settings page layout */
+.settings-content {
+  flex: 1;
+  padding: 20px;
+  background: #f5f6f8;
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.settings-header h1 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.settings-burger {
+  width: 38px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: white;
+  border: 1px solid #e6edf3;
+  box-shadow: 0 2px 6px rgba(16,24,40,0.04);
+}
+
+.settings-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.settings-card {
+  background: white;
+  padding: 18px;
+  border-radius: 10px;
+  border: 1px solid #eef3f7;
+  box-shadow: 0 6px 14px rgba(16,24,40,0.04);
+}
+
+.settings-card-title {
+  font-weight: 700;
+  color: #0f172a;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.settings-card ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.settings-card li {
+  color: #374151;
+  padding: 6px 0;
+  font-size: 15px;
+}
+
+/* Ссылки внутри карточек настроек — серые, без подчёркивания */
+.settings-card a {
+  color: #6b7280;
+  text-decoration: none;
+}
+
+.settings-card a:hover {
+  color: #111827;
+  text-decoration: none;
+}
+
+.settings-link-button {
+  background: transparent;
+  border: none;
+  color: #0f172a;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.services-panel {
+  margin-top: 18px;
+  background: white;
+  border-radius: 10px;
+  padding: 14px;
+  border: 1px solid #eef3f7;
+}
+.services-panel-header {
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:center;
+  margin-bottom:12px;
+}
+.services-search input{
+  width:420px;
+  max-width:100%;
+  padding:10px 12px;
+  border-radius:8px;
+  border:1px solid #e6edf3;
+}
+.create-btn{
+  background:#ffd43b;
+  border:none;
+  padding:8px 14px;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+}
+.service-category{
+  border-top:1px solid #f1f5f9;
+  padding-top:12px;
+  margin-top:12px;
+}
+.category-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.category-title{font-weight:700}
+.category-count{color:#6b7280;font-size:13px}
+.service-table{background:transparent}
+.service-table-head{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;padding:8px 0;border-bottom:1px solid #f1f5f9;color:#6b7280;font-size:13px}
+.service-table-body{display:flex;flex-direction:column}
+.service-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr 1fr;padding:12px 0;border-bottom:1px solid #f8fafc;align-items:center}
+.service-name{font-weight:600}
+.service-online{color:#374151}
+.service-price{color:#374151}
+.service-duration{color:#374151}
+.service-tech{color:#374151}
+.avatar-stack{display:flex;gap:6px}
+.avatar{width:36px;height:36px;border-radius:6px;background:#e6eef7}
+.avatar--dummy{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6)}
+
+@media (max-width: 900px) {
+  .settings-grid { grid-template-columns: 1fr; }
+}

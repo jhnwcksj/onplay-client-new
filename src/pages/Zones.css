@@ -1,0 +1,315 @@
+.zones-content{flex:1;padding:28px 32px;background:#f8fafc}
+.zones-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
+.zones-header h1{margin:0;font-size:22px;color:#111827}
+.zones-actions{margin-left:auto}
+.btn-primary{background:#ffcc00;border:none;padding:8px 14px;border-radius:8px;color:#000;font-weight:600}
+.zones-panel{background:#fff;border-radius:12px;padding:20px;border:1px solid #eef2f7}
+.zones-search{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.zones-search input{flex:1;padding:12px;border:1px solid #eef2f6;border-radius:10px;background:#fbfdff}
+.zones-search .btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e6e6;background:#fff}
+.zones-note{background:#f4f8fb;padding:14px;border-radius:10px;margin-bottom:12px;color:#6b7280;border:1px solid #eef6fb}
+.zones-table{border-top:1px solid #f3f6f8}
+.zones-row{display:flex;align-items:center;padding:16px 8px;border-bottom:1px solid #f7fafc}
+.zones-header-row{font-weight:600;color:#6b7280;background:#fff}
+.col{padding:0 12px}
+.col.name{flex:2;display:flex;align-items:center}
+.col.schedule,.col.booking,.col.services{flex:1;display:flex;align-items:center;justify-content:center;color:#2d6a4f}
+.col.services{color:#111827;font-weight:600}
+
+/* timetable header zones (small) */
+.timetable-zones{display:flex;gap:18px;padding:12px 8px;border-bottom:1px solid #f3f6f8;margin-bottom:10px}
+.tzone{display:flex;align-items:center;gap:10px}
+.tzone-avatar{width:32px;height:32px;border-radius:6px;overflow:hidden;background:#f2f2f2}
+.tzone-avatar img{width:100%;height:100%;object-fit:cover}
+.tzone-name{font-weight:600;font-size:14px}
+.tzone-sub{font-size:12px;color:#6b7280}
+.branch-schedule{padding:8px 12px;color:#374151;font-weight:600}
+.zone-avatar{width:46px;height:46px;border-radius:8px;background:#f2f2f2;margin-right:14px;overflow:hidden;flex:0 0 46px}
+.zone-avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.zone-info{display:flex;flex-direction:column}
+.zone-title{font-weight:600;color:#0f172a}
+.zone-sub{color:#6b7280;font-size:13px}
+.zones-empty{padding:18px;color:#6b7280}
+.zones-empty.error{color:#b91c1c}
+.zone-services-cell{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	width:100%;
+	max-width:140px;
+}
+.zone-services-count{
+	font-size:14px;
+}
+.zone-edit-btn{
+	border:none;
+	background:transparent;
+	color:#9ca3af;
+	font-size:14px;
+	cursor:pointer;
+	padding:2px 4px;
+	border-radius:999px;
+	transition:background 0.15s,color 0.15s,transform 0.1s;
+}
+.zone-edit-btn:hover{
+	background:#f3f4f6;
+	color:#4b5563;
+}
+.zone-edit-btn:active{
+	transform:translateY(1px);
+}
+.zone-booking-toggle-btn{
+	border:none;
+	background:transparent;
+	padding:0;
+	cursor:pointer;
+	display:flex;
+	align-items:center;
+	justify-content:center;
+}
+.zone-booking-toggle-btn:disabled{
+	cursor:default;
+}
+.toggle{
+	display:inline-flex;
+	align-items:center;
+	justify-content:flex-start;
+	width:40px;
+	border-radius:999px;
+	background:#e5e7eb;
+	padding:2px;
+	position:relative;
+	transition:background 0.2s ease;
+}
+.toggle-knob{
+	width:18px;
+	height:18px;
+	border-radius:999px;
+	background:#ffffff;
+	box-shadow:0 1px 3px rgba(15,23,42,0.35);
+	transition:transform 0.2s ease;
+}
+.toggle.on{
+	background:#ffd54a;
+}
+.toggle.on .toggle-knob{
+	transform:translateX(21px);
+}
+.toggle.off{
+	background:#e5e7eb;
+}
+
+.toggle.is-busy{
+	opacity:0.7;
+}
+
+.toggle.is-busy .toggle-knob{
+	animation: zone-toggle-pulse 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes zone-toggle-pulse{
+	from{ transform:translateX(0); }
+	to{ transform:translateX(2px); }
+}
+
+/* Zones dialog (alert-style) */
+.zones-dialog-backdrop{
+	position:fixed;
+	top:0;
+	left:0;
+	right:0;
+	bottom:0;
+	background:rgba(15,23,42,0.45);
+	display:flex;
+	align-items:center;
+	justify-content:center;
+	z-index:1200;
+}
+.zones-dialog{
+	background:#ffffff;
+	border-radius:16px;
+	box-shadow:0 24px 60px rgba(15,23,42,0.3);
+	width:520px;
+	max-width:95vw;
+	max-height:90vh;
+	display:flex;
+	flex-direction:column;
+	overflow:hidden;
+}
+.zones-dialog-header{
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+	padding:14px 18px 10px 18px;
+	border-bottom:1px solid #e5e7eb;
+}
+.zones-dialog-header h2{
+	margin:0;
+	font-size:18px;
+	font-weight:700;
+	color:#111827;
+}
+.zones-dialog-close{
+	border:none;
+	background:transparent;
+	font-size:20px;
+	line-height:1;
+	padding:4px 6px;
+	border-radius:999px;
+	cursor:pointer;
+	color:#6b7280;
+	transition:background 0.15s,color 0.15s,transform 0.1s;
+}
+.zones-dialog-close:hover{
+	background:#f3f4f6;
+	color:#111827;
+}
+.zones-dialog-close:active{
+	transform:translateY(1px);
+}
+.zones-dialog-body{
+	padding:14px 18px 10px 18px;
+	display:flex;
+	flex-direction:column;
+	gap:10px;
+	max-height:60vh;
+	overflow:auto;
+}
+.zones-dialog-field{
+	display:flex;
+	flex-direction:column;
+	gap:4px;
+	font-size:13px;
+	color:#4b5563;
+}
+.zones-dialog-field span{
+	font-weight:600;
+}
+.zones-dialog-field input,
+.zones-dialog-field textarea{
+	border-radius:10px;
+	border:1px solid #e5e7eb;
+	padding:8px 10px;
+	font-size:14px;
+	font-family:inherit;
+}
+.zones-dialog-field textarea{
+	resize:vertical;
+}
+.zones-dialog-two-cols{
+	display:flex;
+	gap:12px;
+}
+.zones-dialog-two-cols .zones-dialog-field{
+	flex:1;
+}
+.zones-dialog-switches{
+	display:flex;
+	flex-direction:column;
+	gap:4px;
+	margin-top:4px;
+}
+.zones-dialog-checkbox{
+	display:flex;
+	align-items:center;
+	gap:6px;
+	font-size:13px;
+	color:#4b5563;
+}
+.zones-dialog-work{
+	margin-top:6px;
+}
+.zones-dialog-work-label{
+	font-size:13px;
+	font-weight:600;
+	color:#4b5563;
+	margin-bottom:4px;
+}
+.zones-dialog-work-row{
+	display:flex;
+	gap:10px;
+}
+.zones-dialog-work-row label{
+	display:flex;
+	align-items:center;
+	gap:4px;
+}
+.zones-dialog-work-row label span{
+	font-size:13px;
+	color:#6b7280;
+}
+.zones-dialog-work-row input[type=time],
+.zones-dialog-work-row input[type=text]{
+	border-radius:10px;
+	border:1px solid #e5e7eb;
+	padding:4px 8px;
+	font-size:13px;
+	font-family:inherit;
+	appearance:none;
+	-moz-appearance:textfield;
+	-webkit-appearance:none;
+}
+
+/* Скрываем стрелку/иконку выбора у поля времени в диалоге зон */
+.zones-dialog-work-row input[type=time]::-webkit-calendar-picker-indicator,
+.zones-dialog-work-row input[list]::-webkit-calendar-picker-indicator{
+	display:none;
+	opacity:0;
+}
+.zones-dialog-work-row input[list]{
+	-webkit-appearance:none;
+	-moz-appearance:none;
+	appearance:none;
+	background-image:none;
+}
+.zones-dialog-online-row{
+	margin-top:8px;
+	display:flex;
+	align-items:center;
+	justify-content:space-between;
+}
+.zones-dialog-online-label{
+	font-size:13px;
+	font-weight:600;
+	color:#4b5563;
+}
+.zones-dialog-error{
+	margin-top:6px;
+	font-size:13px;
+	color:#b91c1c;
+}
+.zones-dialog-actions{
+	display:flex;
+	justify-content:flex-end;
+	gap:8px;
+	padding:10px 18px 14px 18px;
+	border-top:1px solid #e5e7eb;
+}
+.zones-dialog-btn{
+	border-radius:999px;
+	border:1px solid transparent;
+	padding:6px 14px;
+	font-size:13px;
+	cursor:pointer;
+	background:#f3f4f6;
+	color:#111827;
+}
+.zones-dialog-btn.secondary{
+	background:#f3f4f6;
+	border-color:#e5e7eb;
+}
+.zones-dialog-btn.primary{
+	background:#ffcc00;
+	border-color:#ffcc00;
+	color:#000;
+}
+.zones-dialog-btn.danger{
+	background:#fee2e2;
+	border-color:#fecaca;
+	color:#b91c1c;
+}
+.zones-dialog-btn:disabled{
+	opacity:0.7;
+	cursor:default;
+}
+.btn-small{background:#fff;border:1px solid #e6e6e6;padding:6px 10px;border-radius:8px}

@@ -1,0 +1,149 @@
+/* Центрируем страницу */
+.login-wrapper {
+  display: flex;
+  justify-content: center;
+  padding-top: 80px;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+/* Контейнер формы */
+.login-container {
+  width: 380px;
+}
+
+/* Заголовок */
+.login-title {
+  font-size: 36px;
+  font-weight: 800;
+  margin-bottom: 25px;
+}
+
+/* Почта */
+.login-email{
+    margin-bottom: 20px;
+}
+/* Пароль */
+.login-password{
+    margin-bottom: 20px;
+}
+
+
+/* Подписи к полям */
+.login-label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #555;
+}
+
+/* Поля ввода */
+.login-input {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 6px;
+  border: 1px solid #cfd8dc;
+  font-size: 16px;
+  box-sizing: border-box;
+  margin-top: 5px;
+}
+
+.login-input:focus {
+  border-color: #2196f3;
+  outline: none;
+}
+
+/* Блок с чекбоксом и "не помню пароль" */
+.login-extra {
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  gap: 8px;
+}
+
+/* Ссылка */
+.login-forgot {
+  margin-left: auto;
+  color: #1976d2;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.login-forgot:hover {
+  text-decoration: underline;
+}
+
+/* Кнопка */
+.login-button {
+  width: 100%;
+  background-color: #ffc043;
+  padding: 14px;
+  margin-top: 25px;
+  border: none;
+  border-radius: 6px;
+  font-size: 18px;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.login-button:hover {
+  background-color: #ffb020;
+}
+
+
+/* =============================== */
+/* 📱 АДАПТИВ ДЛЯ МОБИЛЬНЫХ (до 600px) */
+/* =============================== */
+
+@media (max-width: 600px) {
+  .login-wrapper {
+    padding-top: 40px;
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  .login-container {
+    width: 100%;
+  }
+
+  .login-title {
+    font-size: 28px;
+    text-align: center;
+  }
+
+  .login-input {
+    font-size: 15px;
+    padding: 10px 12px;
+  }
+
+  .login-button {
+    font-size: 16px;
+    padding: 12px;
+  }
+
+  .login-extra {
+    /* flex-direction: column; */
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
+  .login-forgot {
+    /* margin-left: 0; */
+    float: right;
+  }
+}
+
+/* =============================== */
+/* 📱 АДАПТИВ ДЛЯ МАЛЕНЬКИХ ЭКРАНОВ (до 400px) */
+/* =============================== */
+
+@media (max-width: 400px) {
+  .login-title {
+    font-size: 24px;
+  }
+
+  .login-button {
+    font-size: 15px;
+    padding: 10px;
+  }
+}

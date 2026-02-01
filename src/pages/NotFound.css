@@ -1,0 +1,52 @@
+.notfound-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg, #f6f7fb);
+}
+
+.notfound-card {
+  text-align: center;
+  padding: 48px 36px;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 6px 30px rgba(8,10,18,0.08);
+  max-width: 520px;
+}
+
+.nf-code {
+  font-size: 72px;
+  margin: 0 0 8px 0;
+  color: #222;
+}
+
+.nf-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.nf-desc {
+  color: #666;
+  margin-bottom: 18px;
+}
+
+.nf-actions .btn {
+  margin: 6px 8px;
+  padding: 8px 14px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: #ffd100;
+  color: #111;
+  border: none;
+}
+
+.btn {
+  background: transparent;
+  border: 1px solid #e6e6e6;
+  color: #222;
+}

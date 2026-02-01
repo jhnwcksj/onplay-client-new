@@ -1,0 +1,91 @@
+.notfound-wrapper, .access-denied-ui {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #fbe9e7 100%);
+}
+
+.access-denied-ui {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #fbe9e7 100%);
+  z-index: 9999;
+  text-align: center;
+  box-shadow: none;
+  border-radius: 0;
+  padding: 0;
+}
+
+.ad-icon {
+    /* background: #fff; */
+    /* border-radius: 18px; */
+    /* box-shadow: 0 4px 32px rgba(244,67,54,0.08), 0 1.5px 8px rgba(0,0,0,0.04); */
+    padding: 24px 32px 5px 32px;
+    margin-bottom: 16px;
+  /* margin-bottom: 18px; */
+}
+
+.access-denied-ui h2 {
+    /* background: #fff; */
+    /* border-radius: 18px; */
+    /* box-shadow: 0 4px 32px rgba(244,67,54,0.08), 0 1.5px 8px rgba(0,0,0,0.04); */
+    padding: 5px 32px 5px 32px;
+    margin-bottom: 16px;
+  color: #000000;
+  font-size: 2rem;
+  margin-bottom: 12px;
+}
+
+.ad-desc {
+    /* background: #fff; */
+    /* border-radius: 18px; */
+    /* box-shadow: 0 4px 32px rgba(244,67,54,0.08), 0 1.5px 8px rgba(0,0,0,0.04); */
+    padding: 5px 32px 5px 32px;
+    margin-bottom: 16px;
+  color: #444;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+}
+
+.ad-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.ad-btn {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 4px 32px rgba(244,67,54,0.08), 0 1.5px 8px rgba(0,0,0,0.04);
+    padding: 24px 32px 16px 32px;
+    margin-bottom: 16px;
+  background: #ffcb00;
+  color: #000000;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 28px;
+  font-size: 1rem;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(244,67,54,0.08);
+  transition: background 0.2s;
+}
+.ad-btn:hover {
+  background: #ffcb00;
+}
+
+.ad-btn.primary {
+  background: #ffcb00;
+}
+
+.ad-btn.secondary {
+  background: #ffffff;
+}

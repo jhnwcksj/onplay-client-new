@@ -1,0 +1,312 @@
+/* Basic styling to match the provided 'Clients' UI */
+
+.clients-content {
+  flex: 1;
+  padding: 20px 28px;
+  background: #f5f6f8;
+  display: flex;
+  flex-direction: column;
+}
+
+.clients-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.clients-title {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.clients-main {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.clients-sub {
+  font-size: 13px;
+  color: #6b7280;
+  font-weight: 500;
+  margin-top: 2px;
+}
+
+.clients-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.clients-actions .btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 1px solid #e6edf3;
+  background: #fff;
+}
+
+.clients-actions .btn.yellow {
+  background: #efb42b;
+  color: #0d0d0d;
+  border: none;
+  box-shadow: 0 6px 14px rgba(16,24,40,0.06);
+}
+
+/* Make the plus sign inside the yellow button black */
+.clients-actions .btn.yellow .plus {
+  color: #0d0d0d;
+  margin-right: 8px;
+  font-weight: 700;
+}
+
+.clients-search input {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 6px;
+  border: 1px solid #e6edf3;
+  background: white;
+}
+
+.search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding-right: 110px; /* room for the button */
+}
+
+.search-btn {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  padding: 8px 14px;
+  border-radius: 8px;
+}
+
+.clients-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 14px 0 10px;
+  align-items: stretch;
+}
+
+/* segments row */
+.clients-segments {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.segments-label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.link-like {
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: #0ea5aa;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.link-like.active {
+  font-weight: 600;
+  border-bottom: 1px solid #0ea5aa;
+}
+
+/* filters row */
+.clients-filters .filters {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.filters-label {
+  font-size: 13px;
+  color: #374151;
+  font-weight: 500;
+}
+
+.clients-filters select {
+  padding: 7px 10px;
+  border-radius: 6px;
+  border: 1px solid #e6edf3;
+  background: #fff;
+  font-size: 13px;
+}
+
+.btn.small {
+  padding: 8px 8px;
+  font-size: 14px;
+}
+
+.clients-table-wrap {
+  background: #fff;
+  border-radius: 10px;
+  padding: 12px;
+  border: 1px solid #eef3f7;
+  box-shadow: 0 6px 18px rgba(16,24,40,0.04);
+}
+
+.clients-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 820px;
+}
+
+.clients-table thead th {
+  text-align: left;
+  padding: 12px;
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.clients-table tbody td {
+  padding: 12px;
+  border-top: 1px solid #f0f3f6;
+  vertical-align: middle;
+}
+/* checkbox & actions columns */
+.col-checkbox {
+  width: 40px;
+}
+
+.col-checkbox input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.col-actions {
+  width: 40px;
+  text-align: right;
+}
+
+.has-lock::after {
+  /* content: '\1F512'; */
+  font-size: 12px;
+  margin-left: 4px;
+  color: #d1d5db;
+}
+
+.clients-table tbody tr:nth-child(even) {
+  background-color: #f9fafb;
+}
+
+.client-link {
+  border: none;
+  background: transparent;
+  color: #0ea5aa;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.icon-button {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 4px;
+  font-size: 16px;
+  color: #9ca3af;
+}
+
+.icon-button:hover {
+  color: #6b7280;
+}
+
+.clients-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 14px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.pagination-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.page-size-select {
+  padding: 6px 8px;
+  border-radius: 6px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+}
+
+.pagination-center {
+  text-align: center;
+  flex: 1;
+}
+
+.pagination-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn.secondary {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #374151;
+}
+
+.pagination-pages {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.page-btn {
+  min-width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+}
+
+.page-btn.active {
+  background: #0ea5aa;
+  border-color: #0ea5aa;
+  color: #fff;
+}
+
+.page-dots {
+  padding: 0 4px;
+}
+
+.actions-btn {
+  background: #0ea5aa;
+  color: #fff;
+  border: none;
+}
+
+@media (max-width: 1100px) {
+  .clients-table {
+    min-width: 720px;
+  }
+}
+
+/* empty state */
+.clients-empty {
+  padding: 36px;
+  text-align: center;
+  color: #6b7280;
+  font-size: 15px;
+}
+

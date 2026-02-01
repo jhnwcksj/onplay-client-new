@@ -1,0 +1,550 @@
+/* Sidebar styles (moved from Timetable.css) */
+.sidebar {
+  width: 180px;
+  background: #1f2937;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  padding: 20px;
+  
+}
+
+.logo {
+  font-size: 16px;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.logo-branch { position: relative; margin-bottom: 14px }
+.branch-toggle { display:flex; align-items:center; gap:10px; width:100%; background:transparent; border:none; color:inherit; cursor:pointer; padding:8px 6px; border-radius:10px }
+.logo-avatar { 
+  width:38px; 
+  height:38px; 
+  border-radius:10px; 
+  /* object-fit:cover;  */
+  background:#fff; }
+.branch-toggle:hover { 
+  /* background: rgba(255,255,255,0.02);  */
+  color:#9ca3af; 
+}
+.branch-toggle .logo { font-weight:700; font-size:15px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; display:flex; align-items:center }
+
+.branch-menu { position: absolute; left: 10px; top: 44px; width: 260px; background:#fff; color:#111; border-radius:12px; box-shadow: 0 18px 45px rgba(0,0,0,0.16); padding: 14px; z-index: 50 }
+.branch-menu-section { border-bottom: 1px solid #f1f1f1; padding-bottom:10px; margin-bottom:10px }
+.branch-menu-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
+.branch-menu-title { font-size:14px; }
+.branch-list { display:flex; flex-direction:column; gap:10px }
+.branch-list.small { gap:6px }
+.branch-item { text-align:left; display:flex; flex-direction:column; gap:3px; padding:9px 11px; border-radius:8px; background:transparent; border:none; cursor:pointer; width:100%; box-sizing:border-box }
+.branch-item:hover { background:#f6f9ff }
+.branch-name { font-weight:600; font-size:14px }
+.branch-small { font-size:12px; color:#666 }
+.branch-empty { color:#777; padding:10px 0 }
+.link-add { background:transparent; border:none; color:#2b6cb0; cursor:pointer; font-size:13px; padding:2px 4px }
+.branch-add-line { text-align:left; color:#2b6cb0; background:transparent; border:none; padding:6px 0; cursor:pointer }
+.branch-list.small { gap:6px }
+/* Keeping branch-list.small in case it's used later */
+
+.network-group { padding-top:4px; padding-bottom:4px; border-radius:8px; }
+.network-name { font-size:15px; font-weight:700; color:#111; margin-bottom:4px; }
+
+.mini-calendar {
+  color: #fff;
+  padding: 12px;
+  margin-bottom: 16px;
+  font-family: 'Inter', system-ui, -apple-system, "Segoe UI", 'Helvetica Neue', Arial, sans-serif;
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+}
+
+.sidebar > .profile,
+.sidebar > .sidebar-footer {
+  margin-left: -20px;
+  margin-right: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+}
+
+.sidebar > .mini-calendar {
+  margin-left: -20px;
+  margin-right: -20px;
+  padding-left: 20px;
+  padding-right: 20px;
+  width: calc(100% + 40px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.mini-calendar { margin-bottom: 16px; }
+
+.month-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-bottom: 14px;
+  position: relative;
+  width: 100%;
+}
+
+.mini-calendar .ui-datepicker-calendar {
+  width: 100%;
+  margin: 0 auto;
+  border-collapse: collapse;
+}
+
+.mini-calendar .ui-datepicker-calendar thead {
+  font-size: 13px;
+}
+
+.mini-calendar .ui-datepicker-calendar thead th {
+  text-align: center;
+  padding-bottom: 6px;
+  color: rgba(255,255,255,0.32);
+  opacity: 1;
+}
+
+.mini-calendar .ui-datepicker-calendar tbody {
+  font-size: 12px;
+}
+
+.mini-calendar .ui-datepicker-calendar td {
+  text-align: center;
+  padding: 2px 0;
+}
+
+.mini-calendar .ui-state-default {
+  height: 26px;
+  width: 28px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 550;
+  cursor: pointer;
+}
+
+.mini-calendar .ui-priority-secondary {
+  color: rgba(255,255,255,0.32);
+}
+
+.mini-calendar td.ui-datepicker-other-month .ui-state-default {
+  color: rgba(255,255,255,0.32);
+  font-size: 11px;
+}
+
+.mini-calendar td.ui-datepicker-other-month .ui-state-default:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.mini-calendar td:not(.ui-datepicker-other-month) .ui-state-default:hover {
+  background: rgba(255,255,255,0.08);
+}
+
+.mini-calendar .ui-datepicker-week-end .ui-state-default {
+  color: rgba(255,255,255,0.9);
+}
+
+.mini-calendar td.ui-datepicker-current-day.ui-datepicker-selected .ui-state-default {
+  background: #efb42b;
+  color: #0d0d0d;
+  font-size: 14px;
+}
+
+.mini-calendar td.ui-datepicker-current-day.ui-datepicker-today:not(.ui-datepicker-selected) .ui-state-default {
+  color: #ffc94a;
+  background: transparent;
+  font-size: 14px;
+}
+
+.mini-calendar td.ui-datepicker-current-day.ui-datepicker-today:not(.ui-datepicker-selected) .ui-state-default:hover {
+  background: rgba(255,255,255,0.08);
+  color: #ffc94a;
+}
+
+.mini-calendar .ui-datepicker-prev,
+.mini-calendar .ui-datepicker-next {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #bcd0e6;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.mini-calendar .ui-datepicker-prev::before {
+  font-size: 16px;
+}
+
+.mini-calendar .ui-datepicker-next::before {
+  font-size: 16px;
+}
+
+.mini-calendar .ui-datepicker-prev:hover,
+.mini-calendar .ui-datepicker-next:hover {
+  color: #fff;
+}
+
+.month-header .ui-datepicker-prev {
+  position: absolute;
+  left: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  size: 15px;
+}
+
+.month-header .ui-datepicker-next {
+  position: absolute;
+  right: 0px;
+  top: 50%;
+  transform: translateY(-50%);
+  size: 15px;
+}
+
+.mini-calendar .ui-datepicker {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.mini-calendar .ui-datepicker table {
+  width: 140px;
+  margin: 8px 0;
+}
+
+.mini-calendar .ui-datepicker table a,
+.mini-calendar .ui-datepicker table button.ui-state-default {
+  height: 25px;
+  width: 25px;
+  padding-top: 4px;
+}
+
+.mini-calendar .ui-datepicker .ui-datepicker-header {
+  margin: 0;
+  padding: 6px 6px 4px 0;
+}
+
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-current-week a,
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-current-week td,
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-workweek:hover a,
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-workweek:hover td {
+  background: rgba(239,180,80,0.12);
+}
+
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-current-week a,
+.mini-calendar .ui-datepicker .ui-datepicker-calendar tbody tr.ui-datepicker-current-week td {
+  background: rgba(239,180,80,0.2);
+}
+
+.month-label {
+  text-transform: capitalize;
+  font-weight: 700;
+  font-size: 13px;
+  text-align: center;
+  min-width: 100px;
+}
+
+.month-nav {
+  border: none;
+  background: transparent;
+  color: #fff;
+  padding: 2px 6px;
+  font-size: 20px;
+  cursor: pointer;
+  opacity: 0.9;
+}
+
+.menu {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 8px;
+  /* padding-left: 6px;
+  padding-right: 6px; */
+}
+
+.menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px; /* larger hit area */
+  font-size: 16px; /* larger label */
+  opacity: 0.95;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: none;
+  border-radius: 8px;
+  transition: background 120ms ease, transform 120ms ease;
+}
+
+.menu-item:hover {
+  background-color: rgba(255,255,255,0.03);
+  /* transform: translateX(2px); */
+}
+
+.menu-icon {
+  width: 22px;
+  height: 22px;
+  display: inline-block;
+  opacity: 0.95;
+  filter: brightness(0) invert(1);
+}
+
+.menu-label {
+  display: inline-block;
+}
+
+/* Selected menu — make it full yellow rounded rectangle like the screenshot */
+.menu-item.active {
+  background-color: #efb42b;
+  color: #0d0d0d;
+  transform: none; /* avoid movement */
+  box-shadow: none; /* remove inset left accent */
+}
+
+/* make icon dark on active state so it contrasts on yellow */
+.menu-item.active .menu-icon { 
+    filter: none; 
+    opacity: 0.95; 
+}
+
+/* give a little more horizontal room visually */
+.sidebar { 
+    width: 200px; 
+}
+
+.menu-label { 
+    display: inline-block; 
+}
+
+/* active state shows a subtle filled rounded rectangle and a left accent */
+/* (kept earlier .menu-item.active above which provides the visible active state) */
+
+
+.profile {
+  border-top: 1px solid rgba(255,255,255,0.2);
+  padding-top: 10px;
+  border-bottom: 1px solid rgba(255,255,255,0.2);
+  padding-bottom: 10px;
+}
+
+.profile-button {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: none;
+  color: inherit;
+  cursor: pointer;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.profile-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.profile-email {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.sidebar-footer {
+  margin-top: 16px;
+}
+
+.logout-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.12);
+  color: #fff;
+  background: linear-gradient(135deg, rgba(255,255,255,0.06), rgba(255,255,255,0.02));
+  cursor: pointer;
+  font-weight: 600;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.logout-btn:hover {
+  box-shadow: 0 10px 30px rgba(0,0,0,0.24);
+  background: rgba(255,255,255,0.08);
+}
+
+.logout-icon {
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+/* Network create dialog */
+.network-dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.network-dialog {
+  width: 360px;
+  max-width: 90vw;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(15,23,42,0.35);
+  padding: 18px 20px 16px;
+}
+
+.network-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.network-dialog-title {
+  color: #111827;
+  margin: 0;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.network-dialog-close {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+
+.network-dialog-close:hover {
+  color: #111827;
+}
+
+.network-dialog-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.network-field-label {
+  font-size: 13px;
+  color: #374151;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.network-field-input {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 13px;
+}
+
+/* скрыть стрелку у input с datalist (город) в WebKit/Chromium */
+.network-field-input[list="branch-city-list"] {
+  -webkit-appearance: none;
+  -moz-appearance: textfield;
+  appearance: none;
+  background-image: none;
+}
+
+.network-field-input[list="branch-city-list"]::-webkit-calendar-picker-indicator {
+  display: none;
+}
+
+.network-field-input[list="branch-city-list"]::-webkit-list-button {
+  display: none;
+}
+
+.network-field-hint {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.network-field-input[list="branch-city-list"]::-ms-expand {
+  display: none;
+}
+
+.network-field-hint-chip {
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.network-field-hint-chip:hover {
+  background: #e5f4ff;
+  border-color: #bfdbfe;
+}
+
+.network-field-input:focus {
+  outline: none;
+  border-color: #00bcd4;
+  box-shadow: 0 0 0 1px rgba(0,188,212,0.3);
+}
+
+.network-field-textarea {
+  resize: vertical;
+  min-height: 70px;
+}
+
+.network-dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.network-btn {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  cursor: pointer;
+}
+
+.network-btn-primary {
+  background: #00bcd4;
+  border-color: #00acc1;
+  color: #fff;
+}
+
+.network-btn-secondary {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+.network-btn-primary:hover {
+  background: #0199ad;
+}
+
+.network-btn-secondary:hover {
+  background: #e5e7eb;
+}

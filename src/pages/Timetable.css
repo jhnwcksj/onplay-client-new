@@ -1,0 +1,518 @@
+/* Общий контейнер */
+.timetable-wrapper {
+  display: flex;
+  height: 100vh;
+  background: #f9fafb;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+/* ========================== */
+/* ПРАВАЯ ОБЛАСТЬ */
+/* ========================== */
+
+.timetable-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: white;
+}
+
+/* Верхняя панель */
+.topbar {
+  height: 56px;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  padding: 0 24px;
+  gap: 24px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.btn {
+  background: #f3f4f6;
+  border: 1px solid #d1d5db;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #374151;
+  transition: all 0.2s ease;
+}
+
+.btn:hover {
+  background: #e5e7eb;
+  border-color: #9ca3af;
+}
+
+.date-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #111827;
+  text-transform: capitalize;
+}
+
+.topbar-right {
+  margin-left: auto;
+  display: flex;
+  gap: 12px;
+}
+
+/* ========================== */
+/* СЕТКА */
+/* ========================== */
+
+.timetable-grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #fafbfc;
+  overflow: hidden;
+}
+
+/* Zones header section */
+.timetable-zones {
+  display: flex;
+  gap: 0;
+  padding: 12px 0;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  overflow-x: auto;
+  margin-left: 80px;
+  margin-right: 80px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.tzone {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 12px;
+  border-right: 1px solid #f3f4f6;
+  background: white;
+  min-width: 160px;
+}
+
+.tzone-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  flex-shrink: 0;
+}
+
+.tzone-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tzone-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.tzone-sub {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Branch schedule */
+.branch-schedule {
+  padding: 12px 24px;
+  background: #f0f9ff;
+  border-bottom: 1px solid #bfdbfe;
+  font-size: 13px;
+  color: #0369a1;
+  font-weight: 500;
+}
+
+/* Empty state */
+.clients-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 15px;
+  background: #fafbfc;
+}
+
+/* Timetable body: time column + zones columns grid */
+.timetable-body {
+  display: grid;
+  grid-template-columns: 80px 1fr 80px;
+  flex: 1;
+  overflow: auto;
+  background: white;
+}
+
+.time-column {
+  background: #f9fafb;
+  border-right: 1px solid #e5e7eb;
+  /* padding-top: 8px; */
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.time-column.time-column-right {
+  border-left: 1px solid #e5e7eb;
+  border-right: none;
+  position: sticky;
+  right: 0;
+  z-index: 10; /* ниже zones-scroll и индикатора текущего времени */
+}
+
+.time-cell {
+  height: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding-right: 8px;
+  color: #6b7280;
+  font-size: 12px;
+  border-bottom: 1px solid #f3f4f6;
+  box-sizing: border-box;
+  gap: 2px;
+}
+
+.time-cell .hour {
+  font-weight: 600;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1;
+}
+
+.time-cell .minutes {
+  font-size: 11px;
+  color: #d1d5db;
+  line-height: 1;
+}
+
+/* Zones scroll area */
+.zones-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  position: relative;
+  z-index: 20; /* выше колонки времени, чтобы индикатор был спереди */
+}
+
+.zones-columns {
+  display: grid;
+  grid-auto-rows: 40px;
+  gap: 0;
+  min-width: 100%;
+  background: white;
+}
+
+.slot {
+  border-bottom: 1px solid #f3f4f6;
+  border-right: 1px solid #e5e7eb;
+  box-sizing: border-box;
+  background: white;
+  transition: background-color 0.15s ease;
+  cursor: pointer;
+}
+
+.slot:hover {
+  background-color: #f0f9ff;
+}
+
+.slot:last-child {
+  border-right: none;
+}
+
+/* Слой с прямоугольниками записей поверх сетки слотов */
+.appointments-layer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  z-index: 2; /* ниже линии текущего времени */
+}
+
+/* Линия текущего времени */
+.current-time-indicator {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.current-time-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  width: 100%;
+  border-top: 2px solid #000000; /* чёрная линия */
+}
+
+.current-time-label {
+  position: absolute;
+  /* top: -9px; */
+  /* left: -56px; */
+  transform: translateY(-50%);
+  background: #ffffff;
+  color: #959c17;
+  border: 1px solid #000000;
+  font-size: 14px;
+  line-height: 1;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+  z-index: 4;
+  pointer-events: none;
+}
+
+.timetable-appointment {
+  position: absolute;
+  box-sizing: border-box;
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+  cursor: pointer;
+  pointer-events: auto; /* снова включаем, чтобы по ним можно было кликать */
+  display: flex;
+  flex-direction: column;
+}
+
+/* Хэндл в нижней части записи для продления/сокращения по времени */
+.timetable-appointment-resize-handle-bottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 10px;
+  cursor: ns-resize;
+  background: transparent;
+}
+
+/* Хэндлы слева/справа для объединения/сжатия зон */
+.timetable-appointment-resize-zone-left,
+.timetable-appointment-resize-zone-right {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  background: transparent;
+}
+
+.timetable-appointment-resize-zone-left {
+  left: 0;
+}
+
+.timetable-appointment-resize-zone-right {
+  right: 0;
+}
+
+.timetable-appointment-header {
+  background: #10b981;
+  border: 1px solid #059669;
+  border-bottom: none;
+  color: #ffffff;
+  padding: 2px 6px 2px;
+  font-size: 11px;
+  line-height: 1.3;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timetable-appointment-time {
+  font-weight: 600;
+}
+
+.timetable-appointment-title {
+  font-weight: 500;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.timetable-appointment-body {
+  border-radius: 0 0 8px 8px;
+  height: 100%;
+  background: #e0f9f3;
+  border: 1px solid #059669;
+  /* box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25); */
+  border-top: none;
+  padding: 2px 6px 4px;
+  font-size: 10px;
+  line-height: 1.3;
+  color: #065f46;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.timetable-appointment-comment {
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.timetable-appointment-client-name,
+.timetable-appointment-client-phone {
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.timetable-appointment-meta {
+  font-weight: 600;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+/* Hover card for appointment details */
+.appointment-hover-card {
+  max-width: 380px;
+}
+
+.appointment-hover-card-inner {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+  padding: 16px 20px 18px;
+  border: 1px solid #e5e7eb;
+}
+
+.ahc-header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.ahc-name {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.ahc-phone {
+  font-size: 13px;
+  color: #4b5563;
+}
+
+.ahc-stats-row {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.ahc-stat-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ahc-stat-value {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.ahc-status-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.ahc-status-btn {
+  border-radius: 999px;
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 4px 10px;
+  font-size: 12px;
+  cursor: default;
+}
+
+.ahc-status-btn.active {
+  background: #111827;
+  border-color: #111827;
+  color: #f9fafb;
+}
+
+.ahc-summary {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.ahc-summary-label {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.ahc-summary-value {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.ahc-summary-extra {
+  margin-bottom: 10px;
+}
+
+.ahc-pay-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.ahc-pay-btn {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid #fbbf24;
+  background: #fff7ed;
+  color: #92400e;
+  font-size: 12px;
+}
+
+.ahc-detail-block {
+  margin-bottom: 10px;
+  font-size: 13px;
+}
+
+.ahc-detail-time {
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.ahc-detail-service {
+  color: #4b5563;
+}
+
+.ahc-detail-zones {
+  margin-top: 2px;
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.ahc-comment-block {
+  margin-top: 6px;
+  font-size: 12px;
+}
+
+.ahc-comment-label {
+  color: #9ca3af;
+  margin-bottom: 2px;
+}
+
+.ahc-comment-text {
+  color: #374151;
+}
