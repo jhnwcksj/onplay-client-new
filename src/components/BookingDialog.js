@@ -1,8 +1,7 @@
 
 
-import React, { useEffect, useState, useRef } from 'react';
-
-
+import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { toast } from '../hooks/use-toast';
 import './BookingDialog.css';
 
 const API_URL = process.env.REACT_APP_API_URL;
@@ -254,7 +253,7 @@ function getTimeOptions(start = '10:00', end = '24:00', step = 5) {
   let d = new Date(2000, 0, 1, sh, sm);
   const endD = new Date(2000, 0, 1, eh, em);
   while (d <= endD) {
-    result.push(d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' }));
+    result.push(`${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`);
     d = new Date(d.getTime() + step * 60000);
   }
   return result;
@@ -290,6 +289,46 @@ export default function BookingDialog({
   const [conflictingClient, setConflictingClient] = useState(null);
   const [pendingSubmitData, setPendingSubmitData] = useState(null);
 
+  // Theme detection for dialog (apply dark-theme class when app background is dark)
+  const darkThemeKeys = useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7;
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') { setIsDarkTheme(Boolean(e.detail.isDark)); return; }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
+
   // При открытии в режиме редактирования — выставить выбранный способ оплаты
   useEffect(() => {
     if (mode === 'edit' && appointment) {
@@ -310,10 +349,11 @@ export default function BookingDialog({
   const [showPayDialog, setShowPayDialog] = useState(false);
   function handlePayment(method) {
     setShowPayDialog(false);
-    alert('Оплата через: ' + (method === 'card' ? 'Картой' : 'Наличными'));
+    toast({ title: 'Оплата', description: 'Оплата через: ' + (method === 'card' ? 'Картой' : 'Наличными') });
   }
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
+  const [servicesLoading, setServicesLoading] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
   // --- Phone input state ---
   const [client, setClient] = useState({ name: '', phone: '', email: '' });
@@ -427,14 +467,57 @@ export default function BookingDialog({
   const [packageConflictError, setPackageConflictError] = useState(null);
   const [perPersonHint, setPerPersonHint] = useState(null);
   const [servicePreselected, setServicePreselected] = useState(false); // чтобы авто-выбор в режиме редактирования происходил только один раз
+  const [weekRules, setWeekRules] = useState([]);
+  const [holidays, setHolidays] = useState([]);
+  const [calendarLoaded, setCalendarLoaded] = useState(false);
+  const [serviceWeekOverrides, setServiceWeekOverrides] = useState({});
+  const [branchData, setBranchData] = useState(null); // Данные филиала для проверки лицензии
   const fromTimeRef = useRef(null);
   const toTimeRef = useRef(null);
   const dateWrapperRef = useRef(null);
   const colorWrapperRef = useRef(null);
+  const dateCorrectedRef = useRef(false); // Флаг, что дата уже была скорректирована для текущего открытия
   // const colorListRef = useRef(null);
 
   const selectedColorOption = COLOR_OPTIONS.find(opt => opt.key === colorKey) || COLOR_OPTIONS[0];
   const selectedColorValue = selectedColorOption.value;
+
+  // Определяет тип дня на основе weekRules, holidays и переопределений услуги
+  const getDayType = (dateStr, serviceId = null) => {
+    // dateStr в формате DD.MM.YYYY, конвертируем в YYYY-MM-DD
+    const parts = dateStr.split('.');
+    if (parts.length !== 3) return 'weekday';
+    const [d, m, y] = parts.map(Number);
+    const dateFormatted = `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+    
+    const date = new Date(y, m - 1, d);
+    const dayOfWeek = date.getDay();
+    
+    // Если передан serviceId, проверяем переопределения для этой услуги
+    if (serviceId && serviceWeekOverrides[serviceId]) {
+      const override = serviceWeekOverrides[serviceId][dayOfWeek];
+      if (override) return override;
+    }
+    
+    // Проверяем праздники
+    const event = holidays.find(h => {
+      const [sy, sm, sd] = h.start_date.split('-').map(Number);
+      const [ey, em, ed] = h.end_date.split('-').map(Number);
+      const current = new Date(y, m - 1, d);
+      const start = new Date(sy, sm - 1, sd);
+      const end = new Date(ey, em - 1, ed);
+      return current >= start && current <= end;
+    });
+    
+    if (event) return event.day_type;
+    
+    // Используем правила недели
+    const weekRule = weekRules.find(r => r.weekday === dayOfWeek);
+    if (weekRule) return weekRule.day_type;
+    
+    // По умолчанию
+    return (dayOfWeek === 0 || dayOfWeek === 6) ? 'weekend' : 'weekday';
+  };
 
   // Инициализация при открытии в режиме создания новой записи
   useEffect(() => {
@@ -459,6 +542,115 @@ export default function BookingDialog({
       }
     }
   }, [open, mode, zone, date, time]);
+
+  // Загружаем календарные данные при открытии диалога
+  useEffect(() => {
+    if (!open) return;
+    
+    const currentBranch = zone?.branch_id || localStorage.getItem('selectedBranchId');
+    if (!currentBranch) return;
+
+    const token = localStorage.getItem('token');
+    
+    setCalendarLoaded(false);
+    fetch(`${API_URL}/api/calendar/${currentBranch}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    })
+      .then(res => res.ok ? res.json() : Promise.reject())
+      .then(data => {
+        setWeekRules(data.weekRules || []);
+        setHolidays(data.holidays || []);
+        setCalendarLoaded(true);
+      })
+      .catch(err => {
+        console.error('Ошибка загрузки календаря:', err);
+        // allow services to load even if calendar fetch failed
+        setWeekRules([]);
+        setHolidays([]);
+        setCalendarLoaded(true);
+      });
+    
+    // Загружаем данные филиала для проверки лицензии
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      try {
+        const user = JSON.parse(storedUser);
+        fetch(`${API_URL}/branches?userId=${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+          .then(res => res.ok ? res.json() : Promise.reject())
+          .then(data => {
+            const branchList = data.branches || data;
+            const branch = Array.isArray(branchList) 
+              ? branchList.find(b => String(b.branch_id || b.id) === String(currentBranch))
+              : null;
+            if (branch) {
+              // console.log('BookingDialog: Loaded branch data:', branch);
+              setBranchData(branch);
+            }
+          })
+          .catch(err => {
+            console.error('Ошибка загрузки данных филиала:', err);
+          });
+      } catch (e) {
+        console.error('Ошибка парсинга user:', e);
+      }
+    }
+  }, [open, zone]);
+  
+  // Сброс флага коррекции даты при закрытии диалога
+  useEffect(() => {
+    if (!open) {
+      dateCorrectedRef.current = false;
+    }
+  }, [open]);
+  
+  // Проверка и коррекция даты при открытии диалога (для user/vip-user)
+  useEffect(() => {
+    if (!open || !branchData || !branchData.valid_until || dateCorrectedRef.current) return;
+    
+    let userRole = 'user';
+    try {
+      const stored = localStorage.getItem('user');
+      if (stored) userRole = JSON.parse(stored).role || 'user';
+    } catch {}
+    
+    const isRestrictedRole = userRole === 'user' || userRole === 'vip-user';
+    if (!isRestrictedRole) return;
+    
+    // Используем функциональное обновление для чтения актуального значения selectedDate
+    setSelectedDate(currentDate => {
+      // Проверяем выбранную дату
+      const parts = (currentDate || '').split('.');
+      if (parts.length !== 3) return currentDate;
+      const [d, m, y] = parts.map(Number);
+      
+      // Проверка на NaN
+      if (isNaN(d) || isNaN(m) || isNaN(y) || d <= 0 || m <= 0 || y <= 0) {
+        console.warn('BookingDialog: Invalid date format, skipping correction:', currentDate);
+        return currentDate;
+      }
+      
+      const currentDateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      
+      if (currentDateStr > branchData.valid_until) {
+        // Дата после valid_until - устанавливаем последний валидный день
+        const validParts = branchData.valid_until.split('-');
+        if (validParts.length === 3) {
+          const [vy, vm, vd] = validParts.map(Number);
+          if (!isNaN(vy) && !isNaN(vm) && !isNaN(vd) && vy > 0 && vm > 0 && vd > 0) {
+            const newDate = `${String(vd).padStart(2,'0')}.${String(vm).padStart(2,'0')}.${vy}`;
+            console.log(`BookingDialog: Auto-correcting date from ${currentDate} to ${newDate} (valid_until: ${branchData.valid_until})`);
+            dateCorrectedRef.current = true; // Помечаем, что коррекция выполнена
+            return newDate;
+          }
+        }
+      }
+      
+      return currentDate; // Дата валидна, не меняем
+    });
+  }, [open, branchData]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Note: selectedDate намеренно не включён в зависимости, чтобы избежать бесконечного цикла
   
     // Менять цвет записи по статусу
   useEffect(() => {
@@ -515,7 +707,7 @@ export default function BookingDialog({
       if (!val) return date || '';
       const d = new Date(val);
       if (!Number.isNaN(d.getTime())) {
-        return d.toLocaleDateString('ru-RU', { timeZone: 'Asia/Almaty' });
+        return `${String(d.getDate()).padStart(2, '0')}.${String(d.getMonth() + 1).padStart(2, '0')}.${d.getFullYear()}`;
       }
       return date || '';
     };
@@ -523,19 +715,19 @@ export default function BookingDialog({
     const parseTime = (val, fallback) => {
       if (!val) return fallback;
       if (val instanceof Date) {
-        return val.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+        return `${String(val.getHours()).padStart(2, '0')}:${String(val.getMinutes()).padStart(2, '0')}`;
       }
       if (typeof val === 'string') {
-        const d = new Date(val);
-        if (!Number.isNaN(d.getTime())) {
-          return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+        // Если ISO строка с timezone offset, извлекаем локальное время напрямую
+        // "2026-02-01T14:00:00+05:00" → "14:00"
+        const isoMatch = val.match(/(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?([+-]\d{2}:\d{2}|Z)?/);
+        if (isoMatch) {
+          return `${String(isoMatch[4]).padStart(2, '0')}:${String(isoMatch[5]).padStart(2, '0')}`;
         }
+        // Fallback: простой поиск HH:MM в строке
         const m = val.match(/(\d{1,2}):(\d{2})/);
         if (m) {
-          let h = Number(m[1]) + 5;
-          if (h >= 24) h -= 24;
-          const mi = String(m[2]).padStart(2, '0');
-          return `${String(h).padStart(2, '0')}:${mi}`;
+          return `${String(m[1]).padStart(2, '0')}:${String(m[2]).padStart(2, '0')}`;
         }
       }
       return fallback;
@@ -621,19 +813,26 @@ export default function BookingDialog({
     const selectedZoneObj = zonesWithSelected.find(z => String(z.zone_id) === String(selectedZoneId)) || zone;
     const currentBranchId = selectedZoneObj && selectedZoneObj.branch_id;
 
-    if (open && selectedZoneId && currentBranchId) {
-      const dayType = (() => {
-        const d = new Date(selectedDate.split('.').reverse().join('-'));
-        const day = d.getDay();
-        if (day === 0 || day === 6) return 'weekend';
-        return 'weekday';
-      })();
+    // Wait for calendar data (weekRules/holidays) to be loaded first
+    if (open && selectedZoneId && currentBranchId && calendarLoaded) {
+      setServicesLoading(true);
+      const dayType = getDayType(selectedDate);
+      
+      // Получаем день недели из выбранной даты для передачи в API
+      const parts = selectedDate.split('.');
+      let weekday = null;
+      if (parts.length === 3) {
+        const [d, m, y] = parts.map(Number);
+        const date = new Date(y, m - 1, d);
+        weekday = date.getDay(); // 0=вс, 1=пн, ..., 6=сб
+      }
+      
       // Получаем услуги для всех зон и объединяем без дублей
       // Для подбора услуг при смене зоны используем объединение зон только по зоне и количеству участников
       const currentMergedZones = getMergedZonesForServices(selectedZoneId, participants);
       Promise.all(
         currentMergedZones.map(z =>
-          fetch(`${API_URL}/branches/${currentBranchId}/zones/${z.zone_id}/services?dayType=${dayType}&time=${timeFrom}`)
+          fetch(`${API_URL}/branches/${currentBranchId}/zones/${z.zone_id}/services?dayType=${dayType}&time=${timeFrom}&weekday=${weekday}`)
             .then(res => res.json())
             .then(data => data.services || [])
         )
@@ -659,6 +858,33 @@ export default function BookingDialog({
 
         // Применяем отфильтрованный список услуг
         setServices(filtered);
+        
+        // Загружаем переопределения дней недели для всех услуг
+        const token = localStorage.getItem('token');
+        const overridesPromises = filtered.map(s =>
+          fetch(`${API_URL}/services/${s.service_id}/week-overrides`, {
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          })
+            .then(res => res.ok ? res.json() : [])
+            .then(overrides => {
+              const map = {};
+              overrides.forEach(o => {
+                map[o.weekday] = o.override_day_type;
+              });
+              return { serviceId: s.service_id, overrides: map };
+            })
+            .catch(() => ({ serviceId: s.service_id, overrides: {} }))
+        );
+        
+        Promise.all(overridesPromises).then(results => {
+          const overridesMap = {};
+          results.forEach(r => {
+            overridesMap[r.serviceId] = r.overrides;
+          });
+          setServiceWeekOverrides(overridesMap);
+        });
+        
+        setServicesLoading(false);
 
         // Если ранее была выбрана услуга, но она недоступна для новой зоны — сбрасываем выбор
         if (selectedService) {
@@ -671,6 +897,9 @@ export default function BookingDialog({
             setCustomPrice('');
           }
         }
+      }).catch(err => {
+        console.error('Error loading services:', err);
+        setServicesLoading(false);
       });
       // Получаем зоны (для выпадающего списка, если zones не передан)
       fetch(`${API_URL}/zones?branchId=${currentBranchId}`)
@@ -683,6 +912,7 @@ export default function BookingDialog({
         });
     } else if (!open) {
       setServices([]);
+      setServicesLoading(false);
       setSelectedService(null);
       setPrepaid('');
       setParticipants(1);
@@ -696,9 +926,10 @@ export default function BookingDialog({
       setClient({ name: '', phone: '', email: '' });
       setAvailableZoneIds(null);
       setPackageConflictError(null);
+      setCalendarLoaded(false);
       setServicePreselected(false);
     }
-  }, [open, selectedZoneId, participants, selectedDate, timeFrom, zone]);
+  }, [open, selectedZoneId, participants, selectedDate, timeFrom, zone, calendarLoaded]);
 
   // В режиме редактирования выбираем услугу по service_id, когда список услуг загружен
   useEffect(() => {
@@ -745,19 +976,29 @@ export default function BookingDialog({
     }
 
 
-    // Формируем start_time и end_time в ISO с учётом Asia/Almaty
-    function toAlmatyISO(dateStr, timeStr) {
+    // Формируем start_time и end_time в ISO с offset филиала
+    // ВАЖНО: НЕ используем Date объект, чтобы избежать зависимости от timezone устройства!
+    function toBranchISO(dateStr, timeStr) {
       // dateStr: DD.MM.YYYY, timeStr: HH:MM
       if (!dateStr || !timeStr) return null;
       const [d, m, y] = dateStr.split('.').map(Number);
       const [hh, mm] = timeStr.split(':').map(Number);
-      // Создаём дату в локальном времени (без UTC!)
-      const local = new Date(y, m - 1, d, hh, mm);
-      return local.toISOString();
+      
+      // Получаем offset филиала (backend добавит правильный offset)
+      // Формируем ISO строку БЕЗ offset - backend сам добавит нужный
+      const year = String(y).padStart(4, '0');
+      const month = String(m).padStart(2, '0');
+      const day = String(d).padStart(2, '0');
+      const hour = String(hh).padStart(2, '0');
+      const minute = String(mm).padStart(2, '0');
+      
+      // Возвращаем простую ISO строку без Z и без offset
+      // Backend сам добавит правильный offset на основе timezone филиала
+      return `${year}-${month}-${day}T${hour}:${minute}:00`;
     }
 
-    const start_time = toAlmatyISO(selectedDate, timeFrom);
-    const end_time = toAlmatyISO(selectedDate, timeTo);
+    const start_time = toBranchISO(selectedDate, timeFrom);
+    const end_time = toBranchISO(selectedDate, timeTo);
 
     const body = {
       branch_id: currentBranchId,
@@ -939,29 +1180,9 @@ export default function BookingDialog({
   const finalPrice = customPrice !== '' ? Number(customPrice) : totalSum - discountValue;
   const toPay = finalPrice - prepaidValue;
 
-  // Простой календарь (без сторонних библиотек)
-  function renderCalendar() {
-    const d = new Date();
-    const year = d.getFullYear();
-    const month = d.getMonth();
-    const days = new Date(year, month + 1, 0).getDate();
-    const today = d.getDate();
-    return (
-      <div style={{position:'absolute',zIndex:20,background:'#fff',border:'1px solid #eee',borderRadius:8,padding:12,boxShadow:'0 2px 8px #0001'}}>
-        <div style={{fontWeight:500,marginBottom:8}}>{d.toLocaleString('ru-RU',{month:'long',year:'numeric'})}</div>
-        <div style={{display:'flex',flexWrap:'wrap',width:210}}>
-          {[...Array(days)].map((_,i)=>(
-            <div key={i} style={{width:30,height:30,display:'flex',alignItems:'center',justifyContent:'center',margin:2,cursor:'pointer',borderRadius:6,background:today===i+1?'#ffd600':''}}
-              onClick={()=>{setSelectedDate(`${String(i+1).padStart(2,'0')}.${String(month+1).padStart(2,'0')}.${year}`);setShowCalendar(false);}}>{i+1}</div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   return (
   <div className="booking-dialog-backdrop" onClick={onClose}>
-    <div className="booking-dialog" onClick={e => e.stopPropagation()}>
+    <div className={`booking-dialog ${isDarkTheme ? 'dark-theme' : ''}`} onClick={e => e.stopPropagation()}>
         {/* Левая колонка: зона, дата, время, комментарий */}
         <div className="booking-dialog-col booking-dialog-col-left">
           <div className="booking-dialog-label">Зона</div>
@@ -1010,80 +1231,25 @@ export default function BookingDialog({
           <div className="booking-dialog-label" style={{ marginTop: 8 }}>Цвет записи</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
             <div style={{ position: 'relative', width: 220 }}>
-              <div
-                className="booking-dialog-input"
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  cursor: 'pointer',
-                  userSelect: 'none',
-                  padding: '0 8px',
-                  height: 36,
-                  borderRadius: 6,
-                  border: '1px solid #e5e7eb',
-                  background: '#fff',
-                }}
-                onClick={() => setShowColorList(v => !v)}
-              >
+              <div className={`booking-color-toggle booking-dialog-input`} onClick={() => setShowColorList(v => !v)}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <div
-                    style={{
-                      width: 18,
-                      height: 18,
-                      borderRadius: 4,
-                      border: '1px solid #e5e7eb',
-                      background: selectedColorValue,
-                      marginRight: 4,
-                    }}
-                  />
+                  <div className="booking-color-swatch" style={{ background: selectedColorValue }} />
                   <span>{selectedColorOption.label}</span>
                 </div>
                 <span style={{ fontSize: 18, lineHeight: 1 }}>▾</span>
               </div>
               {showColorList && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    top: '100%',
-                    marginTop: 4,
-                    maxHeight: 260,
-                    overflowY: 'auto',
-                    background: '#fff',
-                    borderRadius: 10,
-                    boxShadow: '0 10px 30px rgba(15,23,42,0.18)',
-                    zIndex: 30,
-                    padding: 4,
-                  }}
-                >
+                <div className="booking-color-list">
                   {COLOR_OPTIONS.map((opt) => (
                     <div
                       key={opt.key}
+                      className={`booking-color-item ${opt.key === colorKey ? 'selected' : ''}`}
                       onClick={() => {
                         setColorKey(opt.key);
                         setShowColorList(false);
                       }}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 8,
-                        padding: '6px 8px',
-                        cursor: 'pointer',
-                        borderRadius: 6,
-                        background: opt.key === colorKey ? 'rgba(59,130,246,0.08)' : 'transparent',
-                      }}
                     >
-                      <div
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 4,
-                          border: '1px solid #e5e7eb',
-                          background: opt.value,
-                        }}
-                      />
+                      <div className="booking-color-swatch" style={{ background: opt.value }} />
                       <span>{opt.label}</span>
                     </div>
                   ))}
@@ -1182,16 +1348,39 @@ export default function BookingDialog({
                             month === selectedParsed.getMonth() &&
                             year === selectedParsed.getFullYear();
                           const isToday = day === today.getDate() && month === today.getMonth() && year === today.getFullYear();
+                          
+                          // Проверка лицензии для user/vip-user
+                          let userRole = 'user';
+                          try {
+                            const stored = localStorage.getItem('user');
+                            if (stored) userRole = JSON.parse(stored).role || 'user';
+                          } catch {}
+                          const isRestrictedRole = userRole === 'user' || userRole === 'vip-user';
+                          const branchValidUntil = branchData?.valid_until;
+                          const cellDateStr = `${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                          const isDateBlocked = isRestrictedRole && branchValidUntil && cellDateStr > branchValidUntil;
+                          
+                          // Debug: показываем блокировку для первых пар дат
+                          // if (day <= 2) {
+                          //   console.log(`BookingDialog calendar day ${day}: role=${userRole}, validUntil=${branchValidUntil}, cellDate=${cellDateStr}, blocked=${isDateBlocked}`);
+                          // }
+                          
                           const dayClass = [
                             'booking-dialog-calendar-day',
                             isSelected ? 'booking-dialog-calendar-day-selected' : '',
                             isToday ? 'booking-dialog-calendar-day-today' : '',
+                            isDateBlocked ? 'booking-dialog-calendar-day-blocked' : '',
                           ].filter(Boolean).join(' ');
                           return (
                             <div
                               key={day}
                               className={dayClass}
+                              style={{
+                                opacity: isDateBlocked ? 0.3 : 1,
+                                cursor: isDateBlocked ? 'not-allowed' : 'pointer',
+                              }}
                               onClick={e=>{
+                                if (isDateBlocked) return;
                                 e.stopPropagation();
                                 const newDate = new Date(year, month, day);
                                 setSelectedDate(`${String(day).padStart(2,'0')}.${String(month+1).padStart(2,'0')}.${year}`);
@@ -1464,14 +1653,22 @@ export default function BookingDialog({
             </div>
           )}
           <div style={{display:'flex',gap:8,marginBottom:16}}>
-            {STATUS_LIST.map(s=>(
-              <button key={s.key} className="btn" style={{background:status===s.key?s.color:'#f3f4f6',color:status===s.key?'#fff':'#222',fontWeight:status===s.key?600:400}} onClick={()=>setStatus(s.key)}>{s.label}</button>
+            {STATUS_LIST.map(s => (
+              <button
+                key={s.key}
+                className={`booking-status-btn ${status === s.key ? 'active' : ''}`}
+                style={status === s.key ? { background: s.color, color: '#fff', fontWeight: 600 } : {}}
+                onClick={() => setStatus(s.key)}
+                aria-pressed={status === s.key}
+              >
+                {s.label}
+              </button>
             ))}
           </div>
           {selectedService && (
-            <div style={{background:'#fafbfc',borderRadius:12,padding:20,boxShadow:'0 2px 8px #0001',marginBottom:16}}>
-              <div style={{fontWeight:600,fontSize:18,marginBottom:12}}>{selectedService.name}</div>
-              <div style={{color:'#4cc9f3ff',fontWeight:500,fontSize:16,marginBottom:16}}>{formatPrice(calcServicePrice(selectedService, Number(participants)) * Number(quantity))}</div>
+            <div className="booking-dialog-selected-service-card">
+              <div className="booking-dialog-selected-service-title">{selectedService.name}</div>
+              <div className="booking-dialog-selected-service-price">{formatPrice(calcServicePrice(selectedService, Number(participants)) * Number(quantity))}</div>
               <div className="booking-dialog-selected-service-form">
                 <div className="booking-dialog-selected-service-form-row">
                   <span>Сеанс кол-во:</span>
@@ -1798,8 +1995,13 @@ export default function BookingDialog({
           )}
           {/* Всегда показываем список услуг */}
           <div className="booking-dialog-services-list">
-            {services.length === 0 && <div style={{color:'#aaa',fontSize:15}}>Нет доступных услуг</div>}
-            {services.map(service => {
+            {servicesLoading && (
+              <div style={{color:'#aaa',fontSize:15,textAlign:'center',padding:'20px'}}>
+                Загрузка услуг...
+              </div>
+            )}
+            {!servicesLoading && services.length === 0 && <div style={{color:'#aaa',fontSize:15}}>Нет доступных услуг</div>}
+            {!servicesLoading && services.map(service => {
               const isSelected = selectedService && selectedService.service_id === service.service_id;
               // Для невыбранных услуг с типом 'package' показываем цену для max_participants, а не для 1
               let previewCount = 1;
@@ -1870,27 +2072,13 @@ export default function BookingDialog({
           <div style={{ display: 'flex', alignItems: 'center', position: 'relative' }}>
             <button
               type="button"
-              style={{
-                padding: '0 8px',
-                background: '#f3f4f6',
-                border: '1px solid #e5e7eb',
-                borderRadius: '6px 0 0 6px',
-                height: 36,
-                lineHeight: '36px',
-                fontWeight: 500,
-                fontSize: 15,
-                cursor: 'pointer',
-                borderRight: 'none',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                zIndex: 2,
-              }}
+              className={`booking-country-button ${showCountryDropdown ? 'open' : ''}`}
               onClick={() => setShowCountryDropdown(v => !v)}
               tabIndex={-1}
+              aria-expanded={showCountryDropdown}
             >
-              {COUNTRY_PHONE_CODES[selectedCountry] || '+7'}
-              <span style={{ fontSize: 13, marginLeft: 2 }}>▾</span>
+              <span className="booking-country-code">{COUNTRY_PHONE_CODES[selectedCountry] || '+7'}</span>
+              <span className="booking-country-caret">▾</span>
             </button>
             <input
               ref={phoneInputRef}
@@ -1925,33 +2113,11 @@ export default function BookingDialog({
               inputMode="numeric"
             />
             {showCountryDropdown && (
-              <div
-                style={{
-                  position: 'absolute',
-                  left: 0,
-                  top: 40,
-                  background: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: 8,
-                  boxShadow: '0 4px 16px #0002',
-                  zIndex: 100,
-                  maxHeight: 320,
-                  overflowY: 'auto',
-                  minWidth: 220,
-                }}
-              >
+              <div className="booking-country-dropdown">
                 {COUNTRIES.map(c => (
                   <div
                     key={c.code}
-                    style={{
-                      padding: '7px 12px',
-                      cursor: 'pointer',
-                      background: c.code === selectedCountry ? '#eaf6ff' : 'transparent',
-                      fontWeight: c.code === selectedCountry ? 600 : 400,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 8,
-                    }}
+                    className={`booking-country-item ${c.code === selectedCountry ? 'selected' : ''}`}
                     onClick={() => {
                       setSelectedCountry(c.code);
                       setShowCountryDropdown(false);
@@ -1968,7 +2134,7 @@ export default function BookingDialog({
                       setTimeout(() => { phoneInputRef.current?.focus(); }, 100);
                     }}
                   >
-                    <span style={{ minWidth: 38 }}>{COUNTRY_PHONE_CODES[c.code]}</span>
+                    <span className="booking-country-code">{COUNTRY_PHONE_CODES[c.code]}</span>
                     <span>{c.name}</span>
                   </div>
                 ))}
@@ -2153,32 +2319,74 @@ export default function BookingDialog({
                   }
                 };
               }
-              onSubmit({
-                zones: mergedZones,
-                date: selectedDate,
-                time: `${timeFrom}—${timeTo}`,
-                service: selectedService,
-                client,
-                prepaid: prepaidValue,
-                discount: discountValue,
-                participants: Number(participants),
-                quantity: Number(quantity),
-                comment,
-                status,
-                finalPrice: finalPrice,
-                appointmentId,
-                color: selectedColorValue,
-                is_paid: selectedPayment === 'card' || selectedPayment === 'cash' ? true : false,
-                payment_method:
-                  selectedPayment === 'card'
-                    ? 'card'
-                    : selectedPayment === 'cash'
-                    ? 'cash'
-                    : null,
-                changes
-              });
+              try {
+                const maybePromise = onSubmit({
+                  zones: mergedZones,
+                  date: selectedDate,
+                  time: `${timeFrom}—${timeTo}`,
+                  service: selectedService,
+                  client,
+                  prepaid: prepaidValue,
+                  discount: discountValue,
+                  participants: Number(participants),
+                  quantity: Number(quantity),
+                  comment,
+                  status,
+                  finalPrice: finalPrice,
+                  appointmentId,
+                  color: selectedColorValue,
+                  is_paid: selectedPayment === 'card' || selectedPayment === 'cash' ? true : false,
+                  payment_method:
+                    selectedPayment === 'card'
+                      ? 'card'
+                      : selectedPayment === 'cash'
+                      ? 'cash'
+                      : null,
+                  changes
+                });
+
+                if (maybePromise && typeof maybePromise.then === 'function') {
+                  await maybePromise;
+                }
+
+                toast({
+                  title: mode === 'edit' ? 'Запись обновлена' : 'Запись создана',
+                  description: mode === 'edit' ? 'Изменения успешно сохранены' : 'Новая запись успешно создана',
+                });
+                
+                // Уведомляем об обновлении записей для обновления точек на календаре
+                window.dispatchEvent(new CustomEvent('appointmentUpdated'));
+              } catch (e) {
+                console.error('Ошибка при сохранении записи:', e);
+                toast({
+                  title: 'Ошибка',
+                  description: e?.message || 'Не удалось сохранить запись',
+                });
+              }
             }}
-            disabled={!selectedService}
+            disabled={(() => {
+              if (!selectedService) return true;
+              
+              // Проверка лицензии для user/vip-user
+              let userRole = 'user';
+              try {
+                const stored = localStorage.getItem('user');
+                if (stored) userRole = JSON.parse(stored).role || 'user';
+              } catch {}
+              
+              const isRestrictedRole = userRole === 'user' || userRole === 'vip-user';
+              if (!isRestrictedRole) return false;
+              
+              const branchValidUntil = branchData?.valid_until;
+              if (!branchValidUntil) return false;
+              
+              const parts = (selectedDate || '').split('.');
+              if (parts.length !== 3) return false;
+              const [d, m, y] = parts.map(Number);
+              const currentDateStr = `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+              
+              return currentDateStr > branchValidUntil;
+            })()}
           >
             {mode === 'edit' ? 'Сохранить изменения' : 'Создать запись'}
           </button>
@@ -2279,13 +2487,20 @@ export default function BookingDialog({
                 onClick={async () => {
                   // Обновить данные клиента
                   try {
-                    const updateRes = await fetch(`${API_URL}/clients/update`, {
+                    const clientId = conflictingClient.client_id;
+                    const updateRes = await fetch(`${API_URL}/clients/${clientId}`, {
                       method: 'PUT',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
-                        phone: client.phone,
                         name: client.name,
+                        phone: client.phone,
                         email: client.email,
+                        additional_phone: conflictingClient.additional_phone || '',
+                        gender: conflictingClient.gender || '',
+                        birth_date: conflictingClient.birth_date || '',
+                        comment: conflictingClient.comment || '',
+                        agreed_to_mailing: conflictingClient.agreed_to_mailing || false,
+                        agreed_to_personal_data: conflictingClient.agreed_to_personal_data || false,
                       }),
                     });
                     

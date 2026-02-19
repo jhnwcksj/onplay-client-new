@@ -3,7 +3,7 @@
 .clients-content {
   flex: 1;
   padding: 20px 28px;
-  background: #f5f6f8;
+  background: var(--theme-page-background, #f5f6f8);
   display: flex;
   flex-direction: column;
 }
@@ -24,11 +24,12 @@
 .clients-main {
   font-size: 22px;
   font-weight: 600;
+  color: var(--theme-text, #333);
 }
 
 .clients-sub {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--theme-subtext, #6b7280);
   font-weight: 500;
   margin-top: 2px;
 }
@@ -42,8 +43,9 @@
 .clients-actions .btn {
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid #e6edf3;
-  background: #fff;
+  border: 1px solid var(--theme-border, #e6edf3);
+  background: var(--theme-card-bg, #fff);
+  color: var(--theme-text, #333);
 }
 
 .clients-actions .btn.yellow {
@@ -309,4 +311,196 @@
   color: #6b7280;
   font-size: 15px;
 }
+
+/* Dark theme overrides for clients page */
+.clients-content.dark-theme {
+  background: #071021;
+  --theme-page-background: #071021;
+  --theme-text: #e6eef7;
+  --theme-card-bg: #0b1228;
+  --theme-border: rgba(255,255,255,0.06);
+  --theme-input-bg: #071621;
+  --theme-input-border: rgba(255,255,255,0.08);
+  --theme-subtext: #9aa8b8;
+  --theme-card-text: #e6eef7;
+}
+
+.clients-content.dark-theme .clients-main,
+.clients-content.dark-theme .clients-sub,
+.clients-content.dark-theme .clients-table thead th,
+.clients-content.dark-theme .client-link {
+  color: var(--theme-text);
+}
+
+.clients-content.dark-theme .clients-actions .btn,
+.clients-content.dark-theme .clients-table-wrap,
+.clients-content.dark-theme .clients-table tbody tr:nth-child(even) {
+  background: var(--theme-card-bg);
+  border-color: var(--theme-border);
+}
+
+.clients-content.dark-theme .clients-search input,
+.clients-content.dark-theme .search-input,
+.clients-content.dark-theme .page-size-select,
+.clients-content.dark-theme .clients-filters select {
+  background: var(--theme-input-bg);
+  border: 1px solid var(--theme-input-border);
+  color: var(--theme-text);
+}
+
+.clients-content.dark-theme .clients-table tbody td,
+.clients-content.dark-theme .clients-table thead th {
+  color: var(--theme-card-text);
+  border-top-color: rgba(255,255,255,0.03);
+}
+
+.clients-content.dark-theme .icon-button { color: #9aa8b8; }
+.clients-content.dark-theme .icon-button:hover { color: #e6eef7; }
+
+/* Keep the add-client dialog light even when page is dark */
+.clients-content.dark-theme .network-dialog {
+  background: #ffffff;
+  box-shadow: 0 24px 60px rgba(15,23,42,0.3);
+}
+.clients-content.dark-theme .network-dialog-header { border-bottom: 1px solid #e5e7eb; }
+.clients-content.dark-theme .network-dialog-title { color: #111827; }
+.clients-content.dark-theme .network-dialog-close { color: #6b7280; }
+.clients-content.dark-theme .network-dialog-body { color: #374151; }
+.clients-content.dark-theme .network-field-label { color: #374151; }
+.clients-content.dark-theme .network-field-input { background: #ffffff; border: 1px solid #e5e7eb; color: #111827; }
+.clients-content.dark-theme .network-dialog-footer .btn { background: #f3f4f6; color: #111827; border-color: #e5e7eb; }
+.clients-content.dark-theme .network-dialog-footer .btn.yellow { background: #efb42b; color: #0d0d0d; }
+
+/* Make primary Add and Search buttons light when page is dark */
+.clients-content.dark-theme .btn.yellow {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+.clients-content.dark-theme .btn.yellow:hover {
+  background: #f3f4f6;
+}
+.clients-content.dark-theme .btn.yellow .plus { color: #111827; }
+
+.clients-content.dark-theme .search-btn,
+.clients-content.dark-theme .btn.small.search-btn {
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid #e5e7eb;
+}
+.clients-content.dark-theme .search-btn:hover { background: #f3f4f6; }
+
+/* Keep the page 'Add client' button yellow (override the general dark-theme rule) */
+.clients-content.dark-theme .clients-actions .btn.yellow {
+  background: #efb42b;
+  color: #0d0d0d;
+  border: 1px solid rgba(0,0,0,0.06);
+}
+.clients-content.dark-theme .clients-actions .btn.yellow:hover {
+  filter: brightness(0.98);
+}
+
+/* Import dialog content: force readable text, list and link colors */
+.clients-content.dark-theme .network-dialog .network-dialog-body * {
+  color: #374151 !important;
+}
+.clients-content.dark-theme .network-dialog .network-dialog-body h3 {
+  color: #000 !important;
+  font-weight: 600 !important;
+}
+.clients-content.dark-theme .network-dialog .network-dialog-body ol,
+.clients-content.dark-theme .network-dialog .network-dialog-body ul,
+.clients-content.dark-theme .network-dialog .network-dialog-body li {
+  color: #374151 !important;
+}
+.clients-content.dark-theme .network-dialog .network-dialog-body a[download],
+.clients-content.dark-theme .network-dialog .network-dialog-body a {
+  background: #3b82f6 !important;
+  color: #ffffff !important;
+  text-decoration: none !important;
+  padding: 8px 12px !important;
+  border-radius: 6px !important;
+  display: inline-block !important;
+}
+.clients-content.dark-theme .network-dialog .network-dialog-body input[type="file"] {
+  background: #ffffff !important;
+  color: #111827 !important;
+}
+
+
+/* Ensure dialog buttons and inputs inside network-dialog stay readable in dark theme */
+.clients-content.dark-theme .network-dialog .btn.danger {
+  background: #fee2e2 !important;
+  color: #b91c1c !important;
+  border-color: #fecaca !important;
+}
+.clients-content.dark-theme .network-dialog .btn.danger:hover {
+  filter: brightness(0.98) !important;
+}
+
+.clients-content.dark-theme .network-dialog .btn.secondary {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+}
+.clients-content.dark-theme .network-dialog .btn.secondary:hover {
+  background: #e9eef2 !important;
+}
+
+.clients-content.dark-theme .network-dialog .btn.yellow {
+  background: #efb42b !important;
+  color: #0d0d0d !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+}
+
+/* Force title/fields/close-button colors with higher specificity */
+.clients-content.dark-theme .network-dialog-header .network-dialog-title {
+  color: #000 !important;
+}
+.clients-content.dark-theme .network-dialog-close {
+  color: #374151 !important;
+}
+.clients-content.dark-theme .network-field-label {
+  color: #374151 !important;
+}
+.clients-content.dark-theme .network-field-input {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+}
+
+
+/* Make visit divider lighter in dark theme */
+.clients-content.dark-theme .visit-divider {
+  background: rgba(255,255,255,0.04);
+}
+
+/* Calendar / datepicker dark adjustments (react-datepicker and common patterns) */
+.clients-content.dark-theme .react-datepicker,
+.clients-content.dark-theme .react-datepicker__triangle,
+.clients-content.dark-theme .react-datepicker__header,
+.clients-content.dark-theme .react-datepicker__month-container,
+.clients-content.dark-theme .react-datepicker__current-month,
+.clients-content.dark-theme .react-datepicker__day-name,
+.clients-content.dark-theme .react-datepicker__day,
+.clients-content.dark-theme .react-datepicker__navigation,
+.clients-content.dark-theme .rdp,
+.clients-content.dark-theme .rdp-day {
+  background: var(--theme-card-bg) !important;
+  color: var(--theme-text) !important;
+  border-color: var(--theme-border) !important;
+}
+
+.clients-content.dark-theme .react-datepicker__day--selected,
+.clients-content.dark-theme .react-datepicker__day--keyboard-selected,
+.clients-content.dark-theme .rdp-day_selected {
+  background: var(--theme-primary, #7fb3ff) !important;
+  color: #0d0d0d !important;
+}
+
+.clients-content.dark-theme .react-datepicker__day--today {
+  color: var(--theme-primary, #7fb3ff) !important;
+}
+
+
 

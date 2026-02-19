@@ -1,40 +1,65 @@
-
+﻿
 import { Navigate, useParams, useLocation, useNavigate } from "react-router-dom";
 import { useState, useEffect, useMemo, useRef } from "react";
 import "./Timetable.css";
 import Sidebar from "../components/Sidebar";
 import '../pages/Zones.css';
 import BookingDialog from '../components/BookingDialog';
+import { TIMEZONE_NAME, updateBranchTimezoneCache } from '../utils/timezone';
+import { formatPhoneNumber } from '../utils/phoneFormatter';
+import { toast } from '../hooks/use-toast';
+
+/**
+ * TIMEZONE FLOW:
+ * 1. Загружаем timezone филиала из БД при монтировании компонента
+ * 2. Сохраняем в localStorage через updateBranchTimezoneCache()
+ * 3. TIMEZONE_NAME() возвращает актуальный timezone филиала из кеша
+ * 
+ * СОЗДАНИЕ/ИЗМЕНЕНИЕ ЗАПИСЕЙ:
+ * - Frontend создает Date объекты локально (new Date(year, month, date, hour, minute))
+ * - Это "наивное" календарное время без timezone (например, 14:00 = 14:00)
+ * - toISO() форматирует в ISO без offset: "2026-02-01T14:00:00"
+ * - Backend добавляет timezone offset филиала: "2026-02-01T14:00:00+05:00"
+ * - PostgreSQL сохраняет с offset
+ * 
+ * ОТОБРАЖЕНИЕ ЗАПИСЕЙ:
+ * - Backend возвращает ISO с offset: "2026-02-01T14:00:00+05:00"
+ * - parseTimeToMinutes() и formatTimeRange() извлекают время НАПРЯМУЮ из строки через regex
+ * - НЕ используем new Date() + Intl API для строк с offset - это вызывает двойную конверсию:
+ *   * new Date("2026-02-01T14:00:00+05:00") → парсит как UTC (14:00 UTC+5 = 09:00 UTC)
+ *   * Intl API в timezone Asia/Almaty → конвертирует обратно (09:00 UTC = 14:00 +05:00)
+ *   * Результат: правильно, НО это лишняя работа и потенциальный источник ошибок
+ * - ПРАВИЛЬНЫЙ ПОДХОД: regex извлекает часы/минуты напрямую: "...T14:00:00+05:00" → 14:00
+ * - Результат: время отображается в timezone филиала, независимо от timezone браузера
+ * 
+ * ВАЖНО: 
+ * - Не используем toLocaleString для создания Date объектов - двойная конверсия!
+ * - Для ISO строк с offset используем regex, а не new Date() + Intl API
+ */
+
 // Declare API_URL once at the top
 const API_URL = process.env.REACT_APP_API_URL;
 
-// Высота одной строки (30 минут) в пикселях — используется и в сетке, и при ресайзе записей
-const ROW_HEIGHT = 40;
+// Высота одной строки (15 минут) в пикселях — используется и в сетке, и при ресайзе записей
+// Для основных строк (:00 и :30) высота 30px, для скрытых (:15 и :45) - только текст
+const ROW_HEIGHT = 30;
 
   // Вспомогательная функция форматирования минут в строку HH:MM
   function minutesToHHMM(totalMinutes) {
-    // GMT+5: добавляем 5 часов к времени
-    let h = Math.floor(totalMinutes / 60) + 5;
-    if (h >= 24) h -= 24;
+    const h = Math.floor(totalMinutes / 60);
     const m = totalMinutes % 60;
     return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
   }
 
-  // Универсальная функция для ISO-строки в зоне Asia/Almaty
+  // Универсальная функция для ISO-строки (простое форматирование без timezone конвертации)
   function toISO(d) {
-    // Получаем компоненты времени в зоне Asia/Almaty
-    const parts = d.toLocaleString('sv-SE', {
-      timeZone: 'Asia/Almaty',
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: false
-    }).replace(/\./g, '-').replace(',', '').split(' ');
-    // parts[0] = yyyy-mm-dd, parts[1] = HH:mm:ss
-    return `${parts[0]}T${parts[1]}`;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const h = String(d.getHours()).padStart(2, '0');
+    const mi = String(d.getMinutes()).padStart(2, '0');
+    const s = String(d.getSeconds()).padStart(2, '0');
+    return `${y}-${m}-${day}T${h}:${mi}:${s}`;
   }
 
 export default function Timetable() {
@@ -77,6 +102,7 @@ export default function Timetable() {
     document.addEventListener('mousedown', handleHoverClick);
     return () => document.removeEventListener('mousedown', handleHoverClick);
   }, [hoverCard.visible]);
+
   const navigate = useNavigate();
 
     useEffect(() => {
@@ -117,6 +143,21 @@ export default function Timetable() {
   const [loadingJournal, setLoadingJournal] = useState(false);
   const [journalError, setJournalError] = useState(null);
 
+  // Service filtering state
+  const [branchServices, setBranchServices] = useState([]);
+  const [selectedServices, setSelectedServices] = useState([]);
+  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const filterDropdownRef = useRef(null);
+
+  // Derive selected service names for display tags
+  const selectedServiceNames = useMemo(() => {
+    if (!selectedServices || selectedServices.length === 0) return [];
+    // branchServices items look like { service_id, name }
+    return branchServices
+      .filter(s => selectedServices.includes(s.service_id))
+      .map(s => ({ id: s.service_id, name: s.name }));
+  }, [branchServices, selectedServices]);
+
   const branchId = useMemo(() => {
     try {
       const params = new URLSearchParams(location.search);
@@ -124,10 +165,32 @@ export default function Timetable() {
     } catch { return null; }
   }, [location.search]);
 
+  // Закрытие dropdown фильтра услуг при клике вне
+  useEffect(() => {
+    if (!showFilterDropdown) return;
+    function handleFilterClick(e) {
+      if (filterDropdownRef.current && !filterDropdownRef.current.contains(e.target)) {
+        setShowFilterDropdown(false);
+      }
+    }
+    document.addEventListener('mousedown', handleFilterClick);
+    return () => document.removeEventListener('mousedown', handleFilterClick);
+  }, [showFilterDropdown]);
+
   // проверяем, что branchId из URL / localStorage реально существует у пользователя
   useEffect(() => {
     let cancelled = false;
     (async () => {
+      // Admin bypass: allow access to any branch without validation
+      const userRole = storedUser?.role || 'user';
+      if (userRole === 'admin') {
+        // Admin can access any branch - skip validation
+        if (branchId) {
+          try { localStorage.setItem('selectedBranchId', String(branchId)); } catch {}
+        }
+        return;
+      }
+      
       // определяем userId
       let uid = userId;
       if (!uid) {
@@ -210,6 +273,7 @@ export default function Timetable() {
     return () => { cancelled = true; };
   }, [branchId, location.pathname, location.search, navigate, token, userId, storedUser]);
 
+  // Определение selectedDate (должно быть ДО useEffect, который использует selectedDate)
   const [selectedDate, setSelectedDate] = useState(() => {
     // prefer ?date=YYYY-MM-DD query param or navigation state, otherwise today
     try {
@@ -221,20 +285,84 @@ export default function Timetable() {
         if (parts.length === 3) {
           const parsed = new Date(parts[0], parts[1] - 1, parts[2]);
           parsed.setHours(0,0,0,0);
-          parsed.setHours(parsed.getHours() + 5); // GMT+5
           return parsed;
         }
         const parsedFallback = new Date(s);
         parsedFallback.setHours(0,0,0,0);
-        parsedFallback.setHours(parsedFallback.getHours() + 5); // GMT+5
         return parsedFallback;
       }
     } catch {}
-    const d = new Date();
-    d.setHours(0,0,0,0);
-    d.setHours(d.getHours() + 5); // GMT+5
-    return d;
+    // Fallback на сегодня в timezone филиала
+    const branchTimezone = TIMEZONE_NAME();
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: branchTimezone,
+        year: 'numeric',
+        month: 'numeric',
+        day: 'numeric'
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+      const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+      const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+      const d = new Date(year, month, day, 0, 0, 0, 0);
+      return d;
+    } catch {
+      const d = new Date();
+      d.setHours(0,0,0,0);
+      return d;
+    }
   });
+
+  // Проверка доступа к филиалу для user/vip-user
+  const [branchAccessDenied, setBranchAccessDenied] = useState(false);
+  const [branchValidUntil, setBranchValidUntil] = useState(null);
+  useEffect(() => {
+    if (!branchId || !storedUser) return;
+    
+    const checkBranchAccess = async () => {
+      try {
+        const user = storedUser; // storedUser already parsed as object
+        const userRole = user?.role || 'user';
+        
+        // Проверка только для user и vip-user
+        if (userRole !== 'user' && userRole !== 'vip-user') {
+          setBranchAccessDenied(false);
+          setBranchValidUntil(null);
+          return;
+        }
+        
+        if (!user?.id) return; // Exit if user id is not available
+        
+        const response = await fetch(`${API_URL}/branches?userId=${user.id}`, {
+          headers: token ? { Authorization: `Bearer ${token}` } : {},
+        });
+        
+        if (response.ok) {
+          const data = await response.json();
+          const branch = data.branches?.find(b => String(b.branch_id) === String(branchId));
+          
+          if (branch && branch.valid_until) {
+            setBranchValidUntil(branch.valid_until);
+            // Проверяем только если selectedDate установлена
+            if (selectedDate) {
+              const selectedDateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+              if (selectedDateStr > branch.valid_until) {
+                setBranchAccessDenied(true);
+              } else {
+                setBranchAccessDenied(false);
+              }
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error checking branch access:', err);
+      }
+    };
+    
+    checkBranchAccess();
+  }, [branchId, storedUser, token, selectedDate]);
 
   // persist selected date to localStorage so other components (Sidebar) can read it
   useEffect(() => {
@@ -251,10 +379,58 @@ export default function Timetable() {
     }
   }, [selectedDate]);
 
+  // Load services for current branch
   useEffect(() => {
-    const date = selectedDate || new Date();
-    const dayMonth = date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: "Asia/Almaty" });
-    const weekday = date.toLocaleDateString("ru-RU", { weekday: "long", timeZone: "Asia/Almaty" });
+    if (!branchId) {
+      setBranchServices([]);
+      setSelectedServices([]);
+      return;
+    }
+
+    let mounted = true;
+    (async () => {
+      try {
+        const url = `${API_URL}/all-services?branchId=${encodeURIComponent(branchId)}`;
+        const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+        if (!res.ok) throw new Error('Failed to load services');
+        const data = await res.json();
+        if (!mounted) return;
+        setBranchServices(Array.isArray(data) ? data : []);
+      } catch (err) {
+        if (!mounted) return;
+        console.error('Error loading services:', err);
+        setBranchServices([]);
+      }
+    })();
+
+    return () => { mounted = false; };
+  }, [branchId, token]);
+
+  useEffect(() => {
+    // Используем selectedDate или fallback на сегодня в timezone филиала
+    const date = selectedDate || (() => {
+      const branchTimezone = TIMEZONE_NAME();
+      try {
+        const now = new Date();
+        const formatter = new Intl.DateTimeFormat('en-US', {
+          timeZone: branchTimezone,
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric'
+        });
+        const parts = formatter.formatToParts(now);
+        const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+        const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+        const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+        return new Date(year, month, day, 0, 0, 0, 0);
+      } catch {
+        const d = new Date();
+        d.setHours(0, 0, 0, 0);
+        return d;
+      }
+    })();
+    const dayMonth = date.toLocaleDateString("ru-RU", { day: "numeric", month: "long", timeZone: TIMEZONE_NAME() });
+    const weekday = date.toLocaleDateString("ru-RU", { weekday: "long", timeZone: TIMEZONE_NAME() });
     setToday(`${dayMonth}, ${weekday}`);
   }, [selectedDate]);
 
@@ -271,11 +447,9 @@ export default function Timetable() {
         if (parts.length === 3) {
           parsed = new Date(parts[0], parts[1] - 1, parts[2]);
           parsed.setHours(0,0,0,0);
-          parsed.setHours(parsed.getHours() + 5); // GMT+5
         } else {
           parsed = new Date(s);
           parsed.setHours(0,0,0,0);
-          parsed.setHours(parsed.getHours() + 5); // GMT+5
         }
         // only update if different
         if (!selectedDate || parsed.getTime() !== selectedDate.getTime()) {
@@ -295,13 +469,42 @@ export default function Timetable() {
     (async () => {
       try {
         // use top-level API_URL
-        const d = selectedDate || new Date();
+        const d = selectedDate || (() => {
+          const branchTimezone = TIMEZONE_NAME();
+          try {
+            const now = new Date();
+            const formatter = new Intl.DateTimeFormat('en-US', {
+              timeZone: branchTimezone,
+              year: 'numeric',
+              month: 'numeric',
+              day: 'numeric'
+            });
+            const parts = formatter.formatToParts(now);
+            const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+            const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+            const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+            return new Date(year, month, day, 0, 0, 0, 0);
+          } catch {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            return today;
+          }
+        })();
         const y = d.getFullYear();
         const m = String(d.getMonth() + 1).padStart(2, '0');
         const day = String(d.getDate()).padStart(2, '0');
         const dateParam = `${y}-${m}-${day}`;
 
-        const url = `${API_URL}/branches/${encodeURIComponent(branchId)}/appointments?date=${encodeURIComponent(dateParam)}`;
+        let url = `${API_URL}/branches/${encodeURIComponent(branchId)}/appointments?date=${encodeURIComponent(dateParam)}`;
+        
+        // Add service_ids filter if any services are selected
+        if (selectedServices.length > 0) {
+          const serviceParams = selectedServices.map(id => `service_ids[]=${encodeURIComponent(id)}`).join('&');
+          url += `&${serviceParams}`;
+          // console.log('Fetching appointments with service filter:', { selectedServices, url });
+        } else {
+          // console.log('Fetching all appointments (no filter):', { url });
+        }
 
         const res = await fetch(url, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
         if (!res.ok) {
@@ -345,7 +548,7 @@ export default function Timetable() {
     })();
 
     return () => { mounted = false; };
-  }, [branchId, token, selectedDate, journalReloadKey, navigate, location.pathname, location.search]);
+  }, [branchId, token, selectedDate, journalReloadKey, navigate, location.pathname, location.search, selectedServices]);
 
   // fetch branch details (schedule) and zones for the header
   const [branchSchedule, setBranchSchedule] = useState(null);
@@ -363,7 +566,14 @@ export default function Timetable() {
           const br = await fetch(`${API_URL}/branches/${encodeURIComponent(branchId)}`, { headers });
           if (br.ok) {
             const brData = await br.json();
-            if (mounted) setBranchSchedule(brData.branch?.schedule || null);
+            const branch = brData.branch || brData;
+            if (mounted) {
+              setBranchSchedule(branch?.schedule || null);
+              // Сохраняем timezone филиала в кеш
+              if (branch?.timezone) {
+                updateBranchTimezoneCache(branchId, branch.timezone);
+              }
+            }
           }
         } catch (e) {
           // ignore branch detail errors for now
@@ -391,8 +601,22 @@ export default function Timetable() {
   const [userError, setUserError] = useState(null);
 
   const [calendarDate, setCalendarDate] = useState(() => {
-    const d = new Date();
-    return new Date(d.getFullYear(), d.getMonth(), 1);
+    // Начальная дата календаря в timezone филиала
+    const branchTimezone = TIMEZONE_NAME();
+    try {
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: branchTimezone,
+        year: 'numeric',
+        month: 'numeric'
+      });
+      const parts = formatter.formatToParts(now);
+      const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+      const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+      return new Date(year, month, 1);
+    } catch {
+      return new Date(new Date().getFullYear(), new Date().getMonth(), 1);
+    }
   });
 
   // Drag & drop существующих записей по сетке расписания
@@ -453,6 +677,7 @@ export default function Timetable() {
 
   const userName = user?.name || "Пользователь";
   const userEmail = user?.email || "email@example.com";
+  const userRole = user?.role || "user";
 
   const [bookingDialog, setBookingDialog] = useState({
     open: false,
@@ -479,7 +704,7 @@ export default function Timetable() {
         if (!prev) return null;
         const deltaY = e.clientY - prev.startClientY;
         const deltaSlots = Math.round(deltaY / ROW_HEIGHT);
-        const stepMinutes = 30;
+        const stepMinutes = 15;
         const maxMinutes = 24 * 60;
         let newEndM = prev.originalEndMinutes + deltaSlots * stepMinutes;
 
@@ -509,16 +734,36 @@ export default function Timetable() {
       // if (!ok) return;
 
 
-      const dateObj = selectedDate || new Date();
+      const dateObj = selectedDate || (() => {
+        const branchTimezone = TIMEZONE_NAME();
+        try {
+          const now = new Date();
+          const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: branchTimezone,
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+          });
+          const parts = formatter.formatToParts(now);
+          const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+          const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+          const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+          return new Date(year, month, day, 0, 0, 0, 0);
+        } catch {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          return today;
+        }
+      })();
       const startDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
       startDate.setMinutes(startMinutes);
       const endDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
       endDate.setMinutes(endMinutes);
-      // Форматируем время для подтверждения в Asia/Almaty
-      const formatAlmaty = (d) => d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty', hour12: false });
-      const ok = window.confirm(`Изменить время записи на ${formatAlmaty(startDate)}–${formatAlmaty(endDate)}?`);
+      // Форматируем время для подтверждения
+      const formatTime = (d) => `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+      const ok = window.confirm(`Изменить время записи на ${formatTime(startDate)}–${formatTime(endDate)}?`);
       if (!ok) return;
-      // Формируем ISO-строки в Asia/Almaty
+      // Формируем ISO-строки
       const newStartISO = toISO(startDate);
       const newEndISO = toISO(endDate);
 
@@ -533,7 +778,7 @@ export default function Timetable() {
         || null;
 
       if (!serviceId) {
-        alert('Не удалось изменить длительность: не указана услуга');
+        toast({ title: 'Ошибка', description: 'Не удалось изменить длительность: не указана услуга', variant: 'destructive' });
         return;
       }
 
@@ -633,14 +878,15 @@ export default function Timetable() {
           if (!res.ok) {
             const text = await res.text();
             console.error('Update appointment (resize) error:', text);
-            alert('Ошибка при изменении длительности записи');
+            toast({ title: 'Ошибка', description: 'Ошибка при изменении длительности записи', variant: 'destructive' });
             return;
           }
 
+          toast({ title: 'Успешно', description: 'Длительность записи изменена' });
           setJournalReloadKey(k => k + 1);
         } catch (err) {
           console.error('Update appointment (resize) exception:', err);
-          alert('Не удалось изменить длительность записи');
+          toast({ title: 'Ошибка', description: 'Не удалось изменить длительность записи', variant: 'destructive' });
         }
       })();
     }
@@ -747,7 +993,7 @@ export default function Timetable() {
         || null;
 
       if (!serviceId) {
-        alert('Не удалось изменить зоны: не указана услуга');
+        toast({ title: 'Ошибка', description: 'Не удалось изменить зоны: не указана услуга', variant: 'destructive' });
         return;
       }
 
@@ -805,7 +1051,27 @@ export default function Timetable() {
         : fromMinutes + 30;
 
       // Формируем даты в зоне Asia/Almaty
-      const dateObj = selectedDate || new Date();
+      const dateObj = selectedDate || (() => {
+        const branchTimezone = TIMEZONE_NAME();
+        try {
+          const now = new Date();
+          const formatter = new Intl.DateTimeFormat('en-US', {
+            timeZone: branchTimezone,
+            year: 'numeric',
+            month: 'numeric',
+            day: 'numeric'
+          });
+          const parts = formatter.formatToParts(now);
+          const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+          const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+          const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+          return new Date(year, month, day, 0, 0, 0, 0);
+        } catch {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          return today;
+        }
+      })();
       const startDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
       startDate.setMinutes(fromMinutes);
       const endDate = new Date(dateObj.getFullYear(), dateObj.getMonth(), dateObj.getDate(), 0, 0, 0, 0);
@@ -861,14 +1127,15 @@ export default function Timetable() {
           if (!res.ok) {
             const text = await res.text();
             console.error('Update appointment (zone-resize) error:', text);
-            alert('Ошибка при изменении зон записи');
+            toast({ title: 'Ошибка', description: 'Ошибка при изменении зон записи', variant: 'destructive' });
             return;
           }
 
+          toast({ title: 'Успешно', description: 'Зоны записи изменены' });
           setJournalReloadKey(k => k + 1);
         } catch (err) {
           console.error('Update appointment (zone-resize) exception:', err);
-          alert('Не удалось изменить зоны записи');
+          toast({ title: 'Ошибка', description: 'Не удалось изменить зоны записи', variant: 'destructive' });
         }
       })();
     }
@@ -882,10 +1149,66 @@ export default function Timetable() {
     };
   }, [zoneResizing, branchId, selectedDate, zonesList, setBranchJournal, setJournalReloadKey]);
 
+  // Determine whether the current app theme/background is dark and respond to changes
+  const darkThemeKeys = useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7;
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') { setIsDarkTheme(Boolean(e.detail.isDark)); return; }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
+
+  // Service filter handlers
+  const handleToggleService = (serviceId) => {
+    setSelectedServices(prev => {
+      if (prev.includes(serviceId)) {
+        return prev.filter(id => id !== serviceId);
+      } else {
+        return [...prev, serviceId];
+      }
+    });
+  };
+
+  const handleResetFilter = () => {
+    setSelectedServices([]);
+    setShowFilterDropdown(false);
+  };
+
   if (!token) return <Navigate to="/login" />;
 
   return (
-    <div className="timetable-wrapper">
+    <div className={`timetable-wrapper`} style={{ position: 'relative' }}> 
       {/* ЛЕВАЯ ПАНЕЛЬ */}
       <Sidebar
         calendarDate={calendarDate}
@@ -894,29 +1217,86 @@ export default function Timetable() {
         setSelectedDate={setSelectedDate}
         userName={userName}
         userEmail={userEmail}
+        userRole={userRole}
         loadingUser={loadingUser}
         userError={userError}
+        selectedServices={selectedServices}
       />
 
       {/* ПРАВАЯ ЧАСТЬ */}
-      <div className="timetable-content">
+      <div className={`timetable-content ${isDarkTheme ? 'dark-theme' : ''}`} style={{ position: 'relative' }}>
+        {/* Overlay для заблокированных дат */}
+        {branchAccessDenied && (
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: isDarkTheme ? 'rgba(0,0,0,0.6)' : 'rgba(255, 255, 255, 0.85)',
+            backdropFilter: 'blur(2px)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            pointerEvents: 'all',
+            cursor: 'not-allowed'
+          }}>
+            <div style={{
+              background: isDarkTheme ? '#0b1228' : '#FEF2F2',
+              border: isDarkTheme ? '1px solid rgba(255,255,255,0.06)' : '2px solid #FCA5A5',
+              borderRadius: '12px',
+              padding: '32px',
+              maxWidth: '500px',
+              boxShadow: isDarkTheme ? '0 8px 24px rgba(0,0,0,0.6)' : '0 8px 24px rgba(0,0,0,0.12)',
+              pointerEvents: 'none'
+            }}>
+              <div style={{ fontSize: '48px', marginBottom: '16px', textAlign: 'center' }}>📅</div>
+              <h2 style={{ color: isDarkTheme ? '#ffb4b4' : '#DC2626', marginBottom: '12px', textAlign: 'center' }}>Эта дата недоступна</h2>
+              <p style={{ color: isDarkTheme ? '#d1d5db' : '#374151', textAlign: 'center', lineHeight: '1.5' }}>
+                {branchValidUntil 
+                  ? (() => {
+                    const formattedValidUntil = new Date(branchValidUntil).toLocaleDateString('ru-RU', { year: 'numeric', month: 'long', day: 'numeric' });
+                    return `Лицензия для этого филиала действительна до ${formattedValidUntil}. Выбранная дата находится за пределами периода действия лицензии.`;
+                  })()
+                  : 'Выбранная дата недоступна. Пожалуйста, выберите другую дату или обратитесь к администратору.'}
+              </p>
+            </div>
+          </div>
+        )}
+        
         {/* ВЕРХНЯЯ ПАНЕЛЬ */}
         <header className="topbar">
           <button
             className="btn"
             onClick={() => {
-              // Always set to local today, even if already selected
-              const now = new Date();
-              now.setHours(0,0,0,0);
-              setSelectedDate(new Date(now));
-              setCalendarDate(new Date(now.getFullYear(), now.getMonth(), 1));
-              // Update ?date= in URL
-              const yyyy = now.getFullYear();
-              const mm = String(now.getMonth() + 1).padStart(2, '0');
-              const dd = String(now.getDate()).padStart(2, '0');
-              const params = new URLSearchParams(location.search);
-              params.set('date', `${yyyy}-${mm}-${dd}`);
-              navigate({ search: params.toString() }, { replace: true });
+              // Получаем текущую дату в timezone филиала
+              const branchTimezone = TIMEZONE_NAME();
+              try {
+                const now = new Date();
+                const formatter = new Intl.DateTimeFormat('en-US', {
+                  timeZone: branchTimezone,
+                  year: 'numeric',
+                  month: 'numeric',
+                  day: 'numeric'
+                });
+                const parts = formatter.formatToParts(now);
+                const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+                const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+                const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+                const nowInBranchTZ = new Date(year, month, day, 0, 0, 0, 0);
+                setSelectedDate(new Date(nowInBranchTZ));
+                setCalendarDate(new Date(year, month, 1));
+                // Update ?date= in URL
+                const yyyy = year;
+                const mm = String(month + 1).padStart(2, '0');
+                const dd = String(day).padStart(2, '0');
+                const params = new URLSearchParams(location.search);
+                params.set('date', `${yyyy}-${mm}-${dd}`);
+                navigate({ search: params.toString() }, { replace: true });
+              } catch (e) {
+                console.error('Error in today button:', e);
+              }
             }}
           >
             Сегодня
@@ -925,6 +1305,55 @@ export default function Timetable() {
           <div className="date-title">{today}</div>
 
           <div className="topbar-right">
+            {/* Active filter info (left of filter button) */}
+            {selectedServiceNames && selectedServiceNames.length > 0 && (
+              <div className="filter-active-info">
+                <span className="filter-active-label">Фильтр:</span>
+                {selectedServiceNames.map(s => (
+                  <span key={s.id} className="filter-tag">{s.name}</span>
+                ))}
+              </div>
+            )}
+            {/* Service Filter Button */}
+            {branchServices.length > 0 && (
+              <div className="filter-container" ref={filterDropdownRef}>
+                <button 
+                  className={`btn ${selectedServices.length > 0 ? 'btn-active' : ''}`}
+                  onClick={() => setShowFilterDropdown(!showFilterDropdown)}
+                >
+                  Фильтр по услугам {selectedServices.length > 0 && `(${selectedServices.length})`}
+                </button>
+                
+                {showFilterDropdown && (
+                  <div className="filter-dropdown">
+                    <div className="filter-header">Выберите услуги</div>
+                    <div className="filter-services">
+                      {branchServices.map(service => (
+                        <label key={service.service_id} className="filter-service-item">
+                          <input
+                            type="checkbox"
+                            checked={selectedServices.includes(service.service_id)}
+                            onChange={() => handleToggleService(service.service_id)}
+                          />
+                          <span>{service.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Reset Filter Button */}
+            {selectedServices.length > 0 && (
+              <button 
+                className="btn btn-reset"
+                onClick={handleResetFilter}
+              >
+                Сброс
+              </button>
+            )}
+
             <button className="btn">Продать</button>
             <button className="btn">0 тг</button>
           </div>
@@ -983,7 +1412,7 @@ export default function Timetable() {
                 return { start: m[1], end: m[2] };
               }
 
-              function generateTimeSlots(startStr, endStr, stepMinutes = 30) {
+              function generateTimeSlots(startStr, endStr, stepMinutes = 15) {
                 const [sh, sm] = startStr.split(':').map(n => Number(n));
                 const [eh, em] = endStr.split(':').map(n => Number(n));
                 const slots = [];
@@ -1020,7 +1449,7 @@ export default function Timetable() {
                 ? minutesToHHMM(scheduleEndMinutes)
                 : sch.end;
 
-              const slots = generateTimeSlots(sch.start, effectiveEndStr, 30);
+              const slots = generateTimeSlots(sch.start, effectiveEndStr, 15);
               const cols = (zonesList && zonesList.length > 0) ? zonesList.length : 1;
 
               // Позиция линии "текущее время", если выбран сегодняшний день
@@ -1029,22 +1458,43 @@ export default function Timetable() {
               let nowLabel = '';
 
               if (selectedDate && now && scheduleStartMinutes != null && scheduleEndMinutes != null) {
-                const todayMidnight = new Date(now);
-                todayMidnight.setHours(0, 0, 0, 0);
+                // Получаем текущее время в timezone филиала
+                const branchTimezone = TIMEZONE_NAME();
+                try {
+                  const formatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: branchTimezone,
+                    year: 'numeric',
+                    month: 'numeric',
+                    day: 'numeric',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: false
+                  });
+                  const parts = formatter.formatToParts(now);
+                  const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+                  const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+                  const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+                  const hour = parseInt(parts.find(p => p.type === 'hour').value, 10);
+                  const minute = parseInt(parts.find(p => p.type === 'minute').value, 10);
+                  
+                  const todayMidnight = new Date(year, month, day, 0, 0, 0, 0);
+                  const selectedMidnight = new Date(selectedDate);
+                  selectedMidnight.setHours(0, 0, 0, 0);
 
-                const selectedMidnight = new Date(selectedDate);
-                selectedMidnight.setHours(0, 0, 0, 0);
+                  const isToday = selectedMidnight.getTime() === todayMidnight.getTime();
 
-                const isToday = selectedMidnight.getTime() === todayMidnight.getTime();
+                  if (isToday) {
+                    // Используем время в timezone филиала
+                    const nowMinutes = hour * 60 + minute;
 
-                if (isToday) {
-                  const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
-                  if (nowMinutes >= scheduleStartMinutes && nowMinutes <= scheduleEndMinutes) {
-                    const offsetNow = nowMinutes - scheduleStartMinutes;
-                    nowLineTop = (offsetNow / 30) * ROW_HEIGHT;
-                    nowLabel = now.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+                    if (nowMinutes >= scheduleStartMinutes && nowMinutes <= scheduleEndMinutes) {
+                      const offsetNow = nowMinutes - scheduleStartMinutes;
+                      nowLineTop = (offsetNow / 15) * ROW_HEIGHT;
+                      nowLabel = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+                    }
                   }
+                } catch (e) {
+                  console.error('Error calculating now line:', e);
                 }
               }
 
@@ -1056,21 +1506,21 @@ export default function Timetable() {
                   if (!v) return '';
                   // Если это уже Date
                   if (v instanceof Date) {
-                    return v.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+                    return `${String(v.getHours()).padStart(2, '0')}:${String(v.getMinutes()).padStart(2, '0')}`;
                   }
                   if (typeof v === 'string') {
-                    // Пытаемся распарсить как полноценную дату/время из БД
-                    const d = new Date(v);
-                    if (!Number.isNaN(d.getTime())) {
-                      return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+                    // Если ISO строка с timezone offset, извлекаем локальное время напрямую
+                    // "2026-02-01T14:00:00+05:00" → "14:00"
+                    const isoMatch = v.match(/(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?([+-]\d{2}:\d{2}|Z)?/);
+                    if (isoMatch) {
+                      const h = String(isoMatch[4]).padStart(2, '0');
+                      const m = String(isoMatch[5]).padStart(2, '0');
+                      return `${h}:${m}`;
                     }
-                    // Фолбэк: вытаскиваем HH:MM из строки и добавляем 5 часов
+                    // Fallback: простой поиск HH:MM в строке
                     const m = v.match(/(\d{1,2}):(\d{2})/);
                     if (m) {
-                      let hh = Number(m[1]) + 5;
-                      if (hh >= 24) hh -= 24;
-                      const mm = String(m[2]).padStart(2, '0');
-                      return `${String(hh).padStart(2, '0')}:${mm}`;
+                      return `${String(m[1]).padStart(2, '0')}:${String(m[2]).padStart(2, '0')}`;
                     }
                   }
                   return '';
@@ -1096,23 +1546,19 @@ export default function Timetable() {
                 if (typeof value === 'string') {
                   const str = value.trim();
 
-                  // Простой формат HH:MM
-                  const direct = str.match(/^(\d{1,2}):(\d{2})$/);
-                  if (direct) {
-                    const h = Number(direct[1]);
-                    const mi = Number(direct[2]);
-                    if (!Number.isNaN(h) && !Number.isNaN(mi)) return h * 60 + mi;
+                  // Если строка содержит ISO с timezone offset, извлекаем локальное время напрямую
+                  // Например: "2026-02-01T14:00:00+05:00" → 14:00 (локальное время в timezone +05:00)
+                  // ВАЖНО: НЕ используем new Date() + Intl API, т.к. это вызывает двойную конвертацию
+                  const isoMatch = str.match(/(\d{4})-(\d{2})-(\d{2})T(\d{1,2}):(\d{2})(?::(\d{2}))?([+-]\d{2}:\d{2}|Z)?/);
+                  if (isoMatch) {
+                    const h = parseInt(isoMatch[4], 10);
+                    const mi = parseInt(isoMatch[5], 10);
+                    if (!Number.isNaN(h) && !Number.isNaN(mi)) {
+                      return h * 60 + mi;
+                    }
                   }
-
-                  // Полный таймстемп из БД: пробуем распарсить как дату
-                  const d = new Date(str);
-                  if (!Number.isNaN(d.getTime())) {
-                    const h = d.getHours();
-                    const mi = d.getMinutes();
-                    if (!Number.isNaN(h) && !Number.isNaN(mi)) return h * 60 + mi;
-                  }
-
-                  // Фолбэк: берём первое вхождение HH:MM в строке
+                  
+                  // Fallback: простой поиск HH:MM в строке
                   const m = str.match(/(\d{1,2}):(\d{2})/);
                   if (m) {
                     const h = Number(m[1]);
@@ -1153,14 +1599,18 @@ export default function Timetable() {
                   ref={bodyRef}
                 >
                   <div className="time-column">
-                    {slots.map((dt, idx) => (
-                      <div key={idx} className="time-cell">
-                        {dt.getMinutes() === 0
-                          ? <span className="hour">{dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' })}</span>
-                          : <span className="minutes">30</span>
-                        }
-                      </div>
-                    ))}
+                    {slots.map((dt, idx) => {
+                      const minutes = dt.getMinutes();
+                      const isHidden = minutes === 15 || minutes === 45;
+                      return (
+                        <div key={idx} className={`time-cell ${isHidden ? 'time-cell-hidden' : ''}`}>
+                          {minutes === 0
+                            ? <span className="hour">{String(dt.getHours()).padStart(2, '0')}:{String(dt.getMinutes()).padStart(2, '0')}</span>
+                            : (!isHidden && <span className="minutes">{String(minutes).padStart(2, '0')}</span>)
+                          }
+                        </div>
+                      );
+                    })}
                   </div>
 
                   <div className="zones-scroll">
@@ -1201,7 +1651,28 @@ export default function Timetable() {
                                   return;
                                 }
 
-                                const dateObj = selectedDate || new Date();
+                                const dateObj = selectedDate || (() => {
+                                  const branchTimezone = TIMEZONE_NAME();
+                                  try {
+                                    const now = new Date();
+                                    const formatter = new Intl.DateTimeFormat('en-US', {
+                                      timeZone: branchTimezone,
+                                      year: 'numeric',
+                                      month: 'numeric',
+                                      day: 'numeric'
+                                    });
+                                    const parts = formatter.formatToParts(now);
+                                    const year = parseInt(parts.find(p => p.type === 'year').value, 10);
+                                    const month = parseInt(parts.find(p => p.type === 'month').value, 10) - 1;
+                                    const day = parseInt(parts.find(p => p.type === 'day').value, 10);
+                                    const today = new Date(year, month, day, 0, 0, 0, 0);
+                                    return today;
+                                  } catch {
+                                    const today = new Date();
+                                    today.setHours(0, 0, 0, 0);
+                                    return today;
+                                  }
+                                })();
 
                                 const startRaw = draggingAppointment.start_time
                                   || draggingAppointment.starts_at
@@ -1265,7 +1736,7 @@ export default function Timetable() {
 
                                 if (!appointmentId || !branchId) {
                                   console.error('Не удалось определить id записи или филиал для переноса');
-                                  alert('Не удалось перенести запись');
+                                  toast({ title: 'Ошибка', description: 'Не удалось перенести запись', variant: 'destructive' });
                                   setDraggingAppointment(null);
                                   dragMovedRef.current = false;
                                   return;
@@ -1326,7 +1797,7 @@ export default function Timetable() {
 
                                 if (!serviceId) {
                                   console.error('У записи отсутствует service_id, перенос невозможен');
-                                  alert('Не удалось перенести запись: не указана услуга');
+                                  toast({ title: 'Ошибка', description: 'Не удалось перенести запись: не указана услуга', variant: 'destructive' });
                                   setDraggingAppointment(null);
                                   dragMovedRef.current = false;
                                   return;
@@ -1430,7 +1901,7 @@ export default function Timetable() {
                                     if (!res.ok) {
                                       const text = await res.text();
                                       console.error('Update appointment (drag) error:', text);
-                                      alert('Ошибка при переносе записи');
+                                      toast({ title: 'Ошибка', description: 'Ошибка при переносе записи', variant: 'destructive' });
                                       return;
                                     }
 
@@ -1439,11 +1910,12 @@ export default function Timetable() {
                                       setDragOriginHighlight({ ...dragOriginRef.current });
                                     }
 
+                                    toast({ title: 'Успешно', description: 'Запись перенесена' });
                                     // Успешно перенесли запись, перезагружаем журнал
                                     setJournalReloadKey(k => k + 1);
                                   } catch (err) {
                                     console.error('Update appointment (drag) exception:', err);
-                                    alert('Не удалось перенести запись');
+                                    toast({ title: 'Ошибка', description: 'Не удалось перенести запись', variant: 'destructive' });
                                   } finally {
                                     setDraggingAppointment(null);
                                     dragMovedRef.current = false;
@@ -1455,7 +1927,7 @@ export default function Timetable() {
                                   visible: true,
                                   row: r,
                                   col: c,
-                                  time: slotTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' }),
+                                  time: `${String(slotTime.getHours()).padStart(2, '0')}:${String(slotTime.getMinutes()).padStart(2, '0')}`,
                                 });
                               }}
                               onMouseLeave={() => {
@@ -1495,7 +1967,7 @@ export default function Timetable() {
                                 setSelectedSlot({
                                   row: r,
                                   col: c,
-                                  time: slotTime.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' }),
+                                  time: `${String(slotTime.getHours()).padStart(2, '0')}:${String(slotTime.getMinutes()).padStart(2, '0')}`,
                                 });
                               }}
                               style={{
@@ -1653,9 +2125,9 @@ export default function Timetable() {
                         const offsetMinutes = Math.max(0, startMinutes - scheduleStartMinutes);
                         const durationMinutes = (endMinutes != null && endMinutes > startMinutes)
                           ? (endMinutes - startMinutes)
-                          : 30;
-                        const slotStart = offsetMinutes / 30; // кол-во 30-минуток от начала графика
-                        const slotSpan = Math.max(1, Math.ceil(durationMinutes / 30));
+                          : 15;
+                        const slotStart = offsetMinutes / 15; // кол-во 15-минуток от начала графика
+                        const slotSpan = Math.max(1, Math.ceil(durationMinutes / 15));
                         const spanCols = Math.max(1, (colEnd - colStart + 1));
 
                         // Во время перетаскивания оставляем запись визуально на исходном месте,
@@ -1816,49 +2288,11 @@ export default function Timetable() {
                               }, 0);
                             }}
                             onMouseEnter={e => {
-                              const container = bodyRef.current;
-                              if (!container) return;
-                              const rect = e.currentTarget.getBoundingClientRect();
-                              const bodyRect = container.getBoundingClientRect();
-                              const scrollY = container.scrollTop || 0;
-
-                              const bodyWidth = bodyRect.width;
-                              const cardWidth = 380; // совпадает с max-width из CSS
-
-                              // Позиция по умолчанию — чуть правее записи
-                              let x = rect.right - bodyRect.left + 12;
-
-                              // Если карточка "упирается" в правый край, переносим её влево от записи
-                              if (x + cardWidth > bodyWidth) {
-                                x = rect.left - bodyRect.left - cardWidth - 12;
-                                if (x < 8) x = 8; // небольшой отступ от левого края
-                              }
-
-                              const y = rect.top - bodyRect.top + scrollY;  // выравниваем по вертикали
-
-                              setHoverCard({
-                                visible: true,
-                                x,
-                                y,
-                                appointment: {
-                                  ...r,
-                                  timeLabel,
-                                  serviceTitle,
-                                  clientName,
-                                  clientPhone,
-                                  participantsCount,
-                                  prepaidAmount,
-                                  remainingAmount,
-                                  totalAmount,
-                                  quantity,
-                                  discountValue,
-                                  status,
-                                }
-                              });
+                              // Отключаем показ hover card при наведении на всю запись
+                              // Карточка будет показываться только при наведении на иконку информации
                             }}
                             onMouseLeave={() => {
-                              // небольшая задержка можно добавить через setTimeout, но пока скрываем сразу
-                              setHoverCard(h => ({ ...h, visible: false }));
+                              // Hover card управляется через иконку информации
                             }}
                             onClick={e => {
                               // Если только что меняли длительность через нижний хэндл, не открываем диалог
@@ -2003,6 +2437,120 @@ export default function Timetable() {
                                 <div className="timetable-appointment-time">{timeLabel}</div>
                               )}
                               <div className="timetable-appointment-title">{serviceTitle}</div>
+                              {/* Иконка информации справа сверху */}
+                              <div
+                                className="timetable-appointment-info-icon"
+                                style={{
+                                  position: 'absolute',
+                                  top: '4px',
+                                  right: '4px',
+                                  width: '16px',
+                                  height: '16px',
+                                  borderRadius: '50%',
+                                  background: '#fff',
+                                  color: '#10b981',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'center',
+                                  fontSize: '11px',
+                                  fontWeight: 'bold',
+                                  cursor: 'pointer',
+                                  zIndex: 10,
+                                  userSelect: 'none',
+                                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                                }}
+                                onMouseEnter={e => {
+                                  e.stopPropagation();
+                                  const container = bodyRef.current;
+                                  if (!container) return;
+                                  const rect = e.currentTarget.getBoundingClientRect();
+                                  const bodyRect = container.getBoundingClientRect();
+                                  const scrollY = container.scrollTop || 0;
+
+                                  const bodyWidth = bodyRect.width;
+                                  const cardWidth = 380;
+
+                                  let x = rect.right - bodyRect.left + 12;
+
+                                  if (x + cardWidth > bodyWidth) {
+                                    x = rect.left - bodyRect.left - cardWidth - 12;
+                                    if (x < 8) x = 8;
+                                  }
+
+                                  let y = rect.top - bodyRect.top + scrollY;
+                                  
+                                  // Проверка границ по вертикали
+                                  const cardHeight = 350; // примерная высота карточки с запасом
+                                  const visibleHeight = bodyRect.height;
+                                  const relativeY = y - scrollY;
+                                  
+                                  // Если карточка не помещается внизу, поднимаем её
+                                  if (relativeY + cardHeight > visibleHeight) {
+                                    // Позиционируем так, чтобы нижний край карточки был виден
+                                    y = visibleHeight - cardHeight + scrollY;
+                                  }
+                                  
+                                  // Если карточка выходит за верхнюю границу
+                                  if (y < scrollY) {
+                                    y = scrollY + 8;
+                                  }
+
+                                  setHoverCard({
+                                    visible: true,
+                                    x,
+                                    y,
+                                    appointment: {
+                                      ...r,
+                                      timeLabel,
+                                      serviceTitle,
+                                      clientName,
+                                      clientPhone,
+                                      participantsCount,
+                                      prepaidAmount,
+                                      remainingAmount,
+                                      totalAmount,
+                                      quantity,
+                                      discountValue,
+                                      status,
+                                    }
+                                  });
+                                }}
+                                onMouseLeave={e => {
+                                  e.stopPropagation();
+                                  setHoverCard({ visible: false, x: 0, y: 0, appointment: null });
+                                }}
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  
+                                  // Определяем основную зону
+                                  const mainZone = Array.isArray(zonesList) && zonesList.length
+                                    ? zonesList[colStart] || zonesList[0]
+                                    : null;
+
+                                  // Дата записи в формате DD.MM.YYYY
+                                  const editDate = selectedDate
+                                    ? selectedDate.toLocaleDateString('ru-RU')
+                                    : '';
+
+                                  const timeLabelForDialog = formatTimeRange(r) || '';
+
+                                  setHoverCard({ visible: false, x: 0, y: 0, appointment: null });
+
+                                  setBookingDialog({
+                                    open: true,
+                                    mode: 'edit',
+                                    zone: mainZone,
+                                    date: editDate,
+                                    time: timeLabelForDialog,
+                                    appointment: {
+                                      ...r,
+                                      zone_ids: zoneIds,
+                                    },
+                                  });
+                                }}
+                              >
+                                i
+                              </div>
                             </div>
                             {(comment || clientName || clientPhone || (participantsCount && participantsCount > 0) || (prepaidAmount !== null)) && (
                               <div
@@ -2027,7 +2575,7 @@ export default function Timetable() {
                                   <div className="timetable-appointment-client-name">{clientName}</div>
                                 )}
                                 {clientPhone && (
-                                  <div className="timetable-appointment-client-phone">{clientPhone}</div>
+                                  <div className="timetable-appointment-client-phone">{formatPhoneNumber(clientPhone)}</div>
                                 )}
                               </div>
                             )}
@@ -2038,14 +2586,18 @@ export default function Timetable() {
                   </div>
 
                   <div className="time-column time-column-right">
-                    {slots.map((dt, idx) => (
-                      <div key={idx} className="time-cell">
-                        {dt.getMinutes() === 0
-                          ? <span className="hour">{dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' })}</span>
-                          : <span className="minutes">30</span>
-                        }
-                      </div>
-                    ))}
+                    {slots.map((dt, idx) => {
+                      const minutes = dt.getMinutes();
+                      const isHidden = minutes === 15 || minutes === 45;
+                      return (
+                        <div key={idx} className={`time-cell ${isHidden ? 'time-cell-hidden' : ''}`}>
+                          {minutes === 0
+                            ? <span className="hour">{String(dt.getHours()).padStart(2, '0')}:{String(dt.getMinutes()).padStart(2, '0')}</span>
+                            : (!isHidden && <span className="minutes">{String(minutes).padStart(2, '0')}</span>)
+                          }
+                        </div>
+                      );
+                    })}
                   </div>
 
                   {/* Hover‑карточка существующей записи */}
@@ -2094,7 +2646,7 @@ export default function Timetable() {
                             <div className="ahc-header">
                               <div className="ahc-name">{a.clientName || a.client_name || 'Без имени'}</div>
                               {a.clientPhone && (
-                                <div className="ahc-phone">+{a.clientPhone}</div>
+                                <div className="ahc-phone">{formatPhoneNumber(a.clientPhone)}</div>
                               )}
                             </div>
 
@@ -2243,6 +2795,18 @@ export default function Timetable() {
                             padding: '12px 20px', fontSize: 18, background: '#ffffffff', border: 'none', borderBottom: '0px solid #4cc9f3ff', cursor: 'pointer', fontFamily: 'Inter, system-ui, -apple-system, "Segoe UI", sans-serif',
                           }}
                           onClick={() => {
+                            // Проверка доступа к филиалу для user/vip-user
+                            if (branchAccessDenied) {
+                              toast({
+                                title: 'Доступ ограничен',
+                                description: `Лицензия филиала истекла ${branchValidUntil ? new Date(branchValidUntil).toLocaleDateString('ru-RU') : ''}. Обратитесь к администратору для продления.`,
+                                variant: 'destructive',
+                              });
+                              setPopup(p => ({ ...p, visible: false }));
+                              setSelectedSlot({ row: null, col: null, time: '' });
+                              return;
+                            }
+                            
                             // Открыть BookingDialog
                             setPopup(p => ({ ...p, visible: false }));
                             setSelectedSlot({ row: null, col: null, time: '' });
@@ -2254,8 +2818,8 @@ export default function Timetable() {
                               const [start] = sch.split('-');
                               const [sh, sm] = start.split(':').map(Number);
                               const dt = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate(), sh, sm, 0, 0);
-                              dt.setMinutes(dt.getMinutes() + 30 * slotIdx);
-                              return dt.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Almaty' });
+                              dt.setMinutes(dt.getMinutes() + 15 * slotIdx);
+                              return `${String(dt.getHours()).padStart(2, '0')}:${String(dt.getMinutes()).padStart(2, '0')}`;
                             })();
                             setBookingDialog({
                               open: true,
@@ -2317,15 +2881,19 @@ export default function Timetable() {
             if (!res.ok) {
               const text = await res.text();
               console.error('Delete appointment error:', text);
-              alert('Ошибка при удалении записи');
+              toast({ title: 'Ошибка', description: 'Ошибка при удалении записи', variant: 'destructive' });
               return;
             }
 
+            toast({ title: 'Успешно', description: 'Запись удалена' });
             setJournalReloadKey(k => k + 1);
             setBookingDialog(d => ({ ...d, open: false }));
+            
+            // Уведомляем об обновлении записей для обновления точек на календаре
+            window.dispatchEvent(new CustomEvent('appointmentUpdated'));
           } catch (e) {
             console.error('Delete appointment exception:', e);
-            alert('Не удалось удалить запись');
+            toast({ title: 'Ошибка', description: 'Не удалось удалить запись', variant: 'destructive' });
           }
         }}
         onSubmit={async data => {
@@ -2347,17 +2915,25 @@ export default function Timetable() {
             } else if (data.zone && data.zone.zone_id) {
               zoneIds = [data.zone.zone_id];
             }
-            function toAlmatyISO(dateStr, timeStr) {
+            // Формируем ISO строку БЕЗ timezone offset
+            // Backend сам добавит правильный offset на основе timezone филиала
+            function toBranchISO(dateStr, timeStr) {
               // dateStr: DD.MM.YYYY, timeStr: HH:MM
               if (!dateStr || !timeStr) return null;
               const [d, m, y] = dateStr.split('.').map(Number);
               const [hh, mm] = timeStr.split(':').map(Number);
-              // Создаём дату в локальном времени (без UTC!)
-              const local = new Date(y, m - 1, d, hh, mm);
-              return local.toISOString();
+              
+              const year = String(y).padStart(4, '0');
+              const month = String(m).padStart(2, '0');
+              const day = String(d).padStart(2, '0');
+              const hour = String(hh).padStart(2, '0');
+              const minute = String(mm).padStart(2, '0');
+              
+              // Возвращаем ISO БЕЗ Z и БЕЗ offset - backend добавит сам
+              return `${year}-${month}-${day}T${hour}:${minute}:00`;
             }
-            const start_time = toAlmatyISO(data.date, time_from);
-            const end_time = toAlmatyISO(data.date, time_to);
+            const start_time = toBranchISO(data.date, time_from);
+            const end_time = toBranchISO(data.date, time_to);
             const body = {
               branch_id: Number(branchId),
               zone_ids: zoneIds,
@@ -2401,7 +2977,7 @@ export default function Timetable() {
                 if (checkRes.ok) {
                   const checkData = await checkRes.json();
                   if (!checkData.available) {
-                    alert('На это время уже есть записи в выбранных зонах. Выберите другое время или зону.');
+                    toast({ title: 'Конфликт', description: 'На это время уже есть записи в выбранных зонах. Выберите другое время или зону.', variant: 'destructive' });
                     return;
                   }
                 } else {
@@ -2422,7 +2998,7 @@ export default function Timetable() {
               if (!res.ok) {
                 const text = await res.text();
                 console.error('Create appointment error:', text);
-                alert('Ошибка при создании записи');
+                toast({ title: 'Ошибка', description: 'Ошибка при создании записи', variant: 'destructive' });
                 return;
               }
             } else {
@@ -2438,7 +3014,7 @@ export default function Timetable() {
               if (!res.ok) {
                 const text = await res.text();
                 console.error('Update appointment error:', text);
-                alert('Ошибка при обновлении записи');
+                toast({ title: 'Ошибка', description: 'Ошибка при обновлении записи', variant: 'destructive' });
                 return;
               }
             }
@@ -2447,9 +3023,12 @@ export default function Timetable() {
             setJournalReloadKey(k => k + 1);
             // При следующем открытии BookingDialog локальный стейт клиента и других полей будет сброшен.
             setBookingDialog(d => ({ ...d, open: false }));
+            
+            // Уведомляем об обновлении записей для обновления точек на календаре
+            window.dispatchEvent(new CustomEvent('appointmentUpdated'));
           } catch (e) {
             console.error('Create appointment exception:', e);
-            alert('Не удалось создать запись');
+            toast({ title: 'Ошибка', description: 'Не удалось создать запись', variant: 'destructive' });
           }
         }}
       />

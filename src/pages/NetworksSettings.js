@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
+import { toast } from '../hooks/use-toast';
 import './NetworksSettings.css';
 
 // Справочники стран и телефонов (скопировано из Sidebar для единообразия)
@@ -167,6 +168,86 @@ const COUNTRY_PHONE_EXAMPLE_LOCAL = {
   GB: '20 7123 4567',
 };
 
+const TIMEZONES = [
+  // Азия - СНГ
+  { value: 'Asia/Almaty', label: 'Алматы (UTC+5)' },
+  { value: 'Asia/Astana', label: 'Астана (UTC+5)' },
+  { value: 'Asia/Aqtau', label: 'Актау (UTC+5)' },
+  { value: 'Asia/Aqtobe', label: 'Актобе (UTC+5)' },
+  { value: 'Asia/Atyrau', label: 'Атырау (UTC+5)' },
+  { value: 'Asia/Oral', label: 'Уральск (UTC+5)' },
+  { value: 'Asia/Qostanay', label: 'Костанай (UTC+5)' },
+  { value: 'Asia/Qyzylorda', label: 'Кызылорда (UTC+5)' },
+  { value: 'Europe/Moscow', label: 'Москва (UTC+3)' },
+  { value: 'Europe/Samara', label: 'Самара (UTC+4)' },
+  { value: 'Asia/Yekaterinburg', label: 'Екатеринбург (UTC+5)' },
+  { value: 'Asia/Omsk', label: 'Омск (UTC+6)' },
+  { value: 'Asia/Novosibirsk', label: 'Новосибирск (UTC+7)' },
+  { value: 'Asia/Krasnoyarsk', label: 'Красноярск (UTC+7)' },
+  { value: 'Asia/Irkutsk', label: 'Иркутск (UTC+8)' },
+  { value: 'Asia/Yakutsk', label: 'Якутск (UTC+9)' },
+  { value: 'Asia/Vladivostok', label: 'Владивосток (UTC+10)' },
+  { value: 'Asia/Magadan', label: 'Магадан (UTC+11)' },
+  { value: 'Asia/Kamchatka', label: 'Камчатка (UTC+12)' },
+  { value: 'Europe/Kyiv', label: 'Киев (UTC+2)' },
+  { value: 'Europe/Minsk', label: 'Минск (UTC+3)' },
+  { value: 'Asia/Bishkek', label: 'Бишкек (UTC+6)' },
+  { value: 'Asia/Tashkent', label: 'Ташкент (UTC+5)' },
+  { value: 'Asia/Dushanbe', label: 'Душанбе (UTC+5)' },
+  { value: 'Asia/Ashgabat', label: 'Ашхабад (UTC+5)' },
+  { value: 'Asia/Baku', label: 'Баку (UTC+4)' },
+  { value: 'Asia/Yerevan', label: 'Ереван (UTC+4)' },
+  { value: 'Asia/Tbilisi', label: 'Тбилиси (UTC+4)' },
+  // Европа
+  { value: 'Europe/London', label: 'Лондон (UTC+0)' },
+  { value: 'Europe/Paris', label: 'Париж (UTC+1)' },
+  { value: 'Europe/Berlin', label: 'Берлин (UTC+1)' },
+  { value: 'Europe/Rome', label: 'Рим (UTC+1)' },
+  { value: 'Europe/Madrid', label: 'Мадрид (UTC+1)' },
+  { value: 'Europe/Amsterdam', label: 'Амстердам (UTC+1)' },
+  { value: 'Europe/Brussels', label: 'Брюссель (UTC+1)' },
+  { value: 'Europe/Zurich', label: 'Цюрих (UTC+1)' },
+  { value: 'Europe/Vienna', label: 'Вена (UTC+1)' },
+  { value: 'Europe/Warsaw', label: 'Варшава (UTC+1)' },
+  { value: 'Europe/Prague', label: 'Прага (UTC+1)' },
+  { value: 'Europe/Budapest', label: 'Будапешт (UTC+1)' },
+  { value: 'Europe/Bucharest', label: 'Бухарест (UTC+2)' },
+  { value: 'Europe/Sofia', label: 'София (UTC+2)' },
+  { value: 'Europe/Athens', label: 'Афины (UTC+2)' },
+  { value: 'Europe/Istanbul', label: 'Стамбул (UTC+3)' },
+  { value: 'Europe/Riga', label: 'Рига (UTC+2)' },
+  { value: 'Europe/Vilnius', label: 'Вильнюс (UTC+2)' },
+  { value: 'Europe/Tallinn', label: 'Таллин (UTC+2)' },
+  // Азия - Восток
+  { value: 'Asia/Dubai', label: 'Дубай (UTC+4)' },
+  { value: 'Asia/Jerusalem', label: 'Иерусалим (UTC+2)' },
+  { value: 'Asia/Shanghai', label: 'Шанхай (UTC+8)' },
+  { value: 'Asia/Hong_Kong', label: 'Гонконг (UTC+8)' },
+  { value: 'Asia/Tokyo', label: 'Токио (UTC+9)' },
+  { value: 'Asia/Seoul', label: 'Сеул (UTC+9)' },
+  { value: 'Asia/Singapore', label: 'Сингапур (UTC+8)' },
+  { value: 'Asia/Bangkok', label: 'Бангкок (UTC+7)' },
+  { value: 'Asia/Kolkata', label: 'Калькутта (UTC+5:30)' },
+  { value: 'Asia/Karachi', label: 'Карачи (UTC+5)' },
+  // Америка
+  { value: 'America/New_York', label: 'Нью-Йорк (UTC-5)' },
+  { value: 'America/Chicago', label: 'Чикаго (UTC-6)' },
+  { value: 'America/Denver', label: 'Денвер (UTC-7)' },
+  { value: 'America/Los_Angeles', label: 'Лос-Анджелес (UTC-8)' },
+  { value: 'America/Toronto', label: 'Торонто (UTC-5)' },
+  { value: 'America/Vancouver', label: 'Ванкувер (UTC-8)' },
+  { value: 'America/Mexico_City', label: 'Мехико (UTC-6)' },
+  { value: 'America/Sao_Paulo', label: 'Сан-Паулу (UTC-3)' },
+  { value: 'America/Argentina/Buenos_Aires', label: 'Буэнос-Айрес (UTC-3)' },
+  { value: 'America/Santiago', label: 'Сантьяго (UTC-3)' },
+  // Австралия и Океания
+  { value: 'Australia/Sydney', label: 'Сидней (UTC+10)' },
+  { value: 'Australia/Melbourne', label: 'Мельбурн (UTC+10)' },
+  { value: 'Australia/Brisbane', label: 'Брисбен (UTC+10)' },
+  { value: 'Australia/Perth', label: 'Перт (UTC+8)' },
+  { value: 'Pacific/Auckland', label: 'Окленд (UTC+12)' },
+];
+
 export default function NetworksSettings() {
   useEffect(() => { document.title = 'Настройки сетей и филиалов'; }, []);
 
@@ -191,6 +272,7 @@ export default function NetworksSettings() {
   const [branchDialogSchedule, setBranchDialogSchedule] = useState('');
   const [branchDialogDescription, setBranchDialogDescription] = useState('');
   const [branchDialogPhotoUrl, setBranchDialogPhotoUrl] = useState('');
+  const [branchDialogTimezone, setBranchDialogTimezone] = useState('Asia/Almaty');
   const [branchDialogRequisitesType, setBranchDialogRequisitesType] = useState('');
   const [branchDialogLegalCompanyName, setBranchDialogLegalCompanyName] = useState('');
   const [branchDialogLegalAddress, setBranchDialogLegalAddress] = useState('');
@@ -358,6 +440,11 @@ export default function NetworksSettings() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: data.error || 'Не удалось сохранить изменения'
+        });
         setNetworkDialogError(data.error || 'Не удалось сохранить изменения');
         return;
       }
@@ -373,6 +460,11 @@ export default function NetworksSettings() {
           );
         });
       }
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Сеть обновлена'
+      });
       try { window.location.reload(); } catch {}
     } catch (e) {
       setNetworkDialogError('Ошибка при сохранении');
@@ -402,6 +494,11 @@ export default function NetworksSettings() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: data.error || 'Не удалось удалить сеть'
+        });
         setNetworkDialogError(data.error || 'Не удалось удалить сеть');
         return;
       }
@@ -409,6 +506,11 @@ export default function NetworksSettings() {
       setNetworks((prev) => {
         const list = Array.isArray(prev) ? prev : [];
         return list.filter((n) => (n.network_id || n.id || n.networkId) !== (editingNetwork.network_id || editingNetwork.id || editingNetwork.networkId));
+      });
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Сеть удалена'
       });
       try { window.location.reload(); } catch {}
     } catch (e) {
@@ -431,6 +533,7 @@ export default function NetworksSettings() {
     setBranchDialogSchedule(branch.schedule || '');
     setBranchDialogDescription(branch.description || '');
     setBranchDialogPhotoUrl(branch.photo_url || '');
+    setBranchDialogTimezone(branch.timezone || 'Asia/Almaty');
     setBranchDialogRequisitesType(branch.requisites_type || '');
     setBranchDialogLegalCompanyName(branch.legal_company_name || '');
     setBranchDialogLegalAddress(branch.legal_address || '');
@@ -460,6 +563,7 @@ export default function NetworksSettings() {
     setBranchDialogSchedule('');
     setBranchDialogDescription('');
     setBranchDialogPhotoUrl('');
+    setBranchDialogTimezone('Asia/Almaty');
     setBranchDialogRequisitesType('');
     setBranchDialogLegalCompanyName('');
     setBranchDialogLegalAddress('');
@@ -504,6 +608,7 @@ export default function NetworksSettings() {
         schedule: branchDialogSchedule.trim() || null,
         description: branchDialogDescription.trim() || null,
         photo_url: branchDialogPhotoUrl.trim() || null,
+        timezone: branchDialogTimezone || 'Asia/Almaty',
         requisites_type: branchDialogRequisitesType.trim() || null,
         legal_company_name: branchDialogLegalCompanyName.trim() || null,
         legal_address: branchDialogLegalAddress.trim() || null,
@@ -533,6 +638,11 @@ export default function NetworksSettings() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: data.error || 'Не удалось сохранить филиал'
+        });
         setBranchDialogError(data.error || 'Не удалось сохранить изменения филиала');
         return;
       }
@@ -548,6 +658,11 @@ export default function NetworksSettings() {
           );
         });
       }
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Филиал обновлён'
+      });
       try { window.location.reload(); } catch {}
     } catch (e) {
       setBranchDialogError('Ошибка при сохранении филиала');
@@ -578,6 +693,11 @@ export default function NetworksSettings() {
 
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: data.error || 'Не удалось удалить филиал'
+        });
         setBranchDialogError(data.error || 'Не удалось удалить филиал');
         return;
       }
@@ -595,6 +715,12 @@ export default function NetworksSettings() {
           localStorage.removeItem('selectedBranchId');
         }
       } catch {}
+
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Филиал удалён'
+      });
 
       try { window.location.reload(); } catch {}
     } catch (e) {
@@ -686,7 +812,14 @@ export default function NetworksSettings() {
                     )} */}
                     {list.map((b) => (
                       <div key={b.branch_id || b.id || b.branchId} className="service-row">
-                        <div className="service-name">{b.branch_name || b.name}</div>
+                        <div className="service-name">
+                          {b.branch_name || b.name}
+                          {b.category && (
+                            <div style={{ fontSize: '0.85em', color: '#666', marginTop: '4px' }}>
+                              {b.category === 'VR' ? '🎮 VR Арена' : b.category === 'Бильярд' ? '🎱 Бильярд' : b.category === 'Техосмотр' ? '🔧 Техосмотр' : b.category}
+                            </div>
+                          )}
+                        </div>
                         <div className="service-duration">{b.city || ''}</div>
                         <div className="service-duration">{b.address || ''}</div>
                         <div className="service-duration">{b.phone || b.phone_number || ''}</div>
@@ -714,6 +847,10 @@ export default function NetworksSettings() {
     );
   };
 
+  const userName = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь';
+  const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com';
+  const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role || 'user' : 'user';
+
   return (
     <div className="timetable-wrapper">
       <Sidebar
@@ -721,13 +858,14 @@ export default function NetworksSettings() {
         setCalendarDate={() => {}}
         selectedDate={new Date()}
         setSelectedDate={() => {}}
-        userName={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь'}
-        userEmail={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com'}
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
         loadingUser={false}
         userError={null}
       />
 
-      <div className="services-content">
+      <div className="networks-content">
         <div className="services-header">
           <div className="services-burger">☰</div>
           <h1>Настройки сетей и филиалов</h1>
@@ -1041,6 +1179,18 @@ export default function NetworksSettings() {
                             }}
                             placeholder="Например, 10:00-22:00"
                           />
+                        </label>
+                        <label className="service-editor-field-label">
+                          Часовой пояс
+                          <select
+                            className="service-editor-input"
+                            value={branchDialogTimezone}
+                            onChange={(e) => setBranchDialogTimezone(e.target.value)}
+                          >
+                            {TIMEZONES.map(tz => (
+                              <option key={tz.value} value={tz.value}>{tz.label}</option>
+                            ))}
+                          </select>
                         </label>
                       </div>
                     )}

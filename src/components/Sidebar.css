@@ -1,12 +1,26 @@
 /* Sidebar styles (moved from Timetable.css) */
 .sidebar {
-  width: 180px;
-  background: #1f2937;
+  width: 200px;
+  min-width: 200px;
+  max-width: 200px;
+  flex-shrink: 0;
+  background: var(--theme-sidebar-bg, #111827);
   color: white;
   display: flex;
   flex-direction: column;
   padding: 20px;
-  
+  padding-bottom: 0;
+  position: relative;
+  z-index: 1500;
+  height: 100vh;
+  overflow: hidden;
+  /* Скрыть скроллбар, но сохранить возможность скроллинга */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE и Edge */
+}
+
+.sidebar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
 }
 
 .logo {
@@ -29,8 +43,39 @@
 }
 .branch-toggle .logo { font-weight:700; font-size:15px; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; line-height:1.2; display:flex; align-items:center }
 
-.branch-menu { position: absolute; left: 10px; top: 44px; width: 260px; background:#fff; color:#111; border-radius:12px; box-shadow: 0 18px 45px rgba(0,0,0,0.16); padding: 14px; z-index: 50 }
-.branch-menu-section { border-bottom: 1px solid #f1f1f1; padding-bottom:10px; margin-bottom:10px }
+.branch-menu { position: absolute; left: 10px; top: 44px; width: 260px; background: var(--theme-card-bg, #fff) !important; color: var(--theme-text, #111) !important; border-radius:12px; box-shadow: 0 18px 45px rgba(0,0,0,0.16); padding: 14px; z-index: 2000 }
+.branch-menu-section { border-bottom: 1px solid var(--theme-border, #f1f1f1); padding-bottom:10px; margin-bottom:10px }
+
+/* Polished section styles for branch menu */
+.branch-menu .branch-menu-section {
+  background: #ffffff !important;
+  color: #111 !important;
+  border: 1px solid rgba(0,0,0,0.06) !important;
+  border-radius: 10px !important;
+  padding: 12px !important;
+  margin-bottom: 12px !important;
+  box-shadow: 0 10px 30px rgba(2,6,23,0.06) !important;
+}
+
+.branch-menu .branch-menu-section .branch-menu-header { margin-bottom: 8px }
+.branch-menu .branch-menu-section .branch-menu-title { color: #111; font-size:14px }
+
+/* Items inside section: subtle card-like rows */
+.branch-menu .branch-menu-section .branch-list { gap: 8px }
+.branch-menu .branch-menu-section .branch-item {
+  background: rgba(2,6,23,0.03) !important;
+  color: #111 !important;
+  border-radius: 8px !important;
+  padding: 10px 12px !important;
+  border: 1px solid rgba(2,6,23,0.04) !important;
+}
+.branch-menu .branch-menu-section .branch-item:hover {
+  background: rgba(2,6,23,0.06) !important;
+}
+
+.branch-menu .branch-menu-section .network-name { color: #111 !important; font-weight:700 }
+.branch-menu .branch-menu-section .branch-small { color: #555 !important }
+
 .branch-menu-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px }
 .branch-menu-title { font-size:14px; }
 .branch-list { display:flex; flex-direction:column; gap:10px }
@@ -43,10 +88,56 @@
 .link-add { background:transparent; border:none; color:#2b6cb0; cursor:pointer; font-size:13px; padding:2px 4px }
 .branch-add-line { text-align:left; color:#2b6cb0; background:transparent; border:none; padding:6px 0; cursor:pointer }
 .branch-list.small { gap:6px }
-/* Keeping branch-list.small in case it's used later */
+/* Keeping branch-list.small in case it's 200used later */
 
 .network-group { padding-top:4px; padding-bottom:4px; border-radius:8px; }
 .network-name { font-size:15px; font-weight:700; color:#111; margin-bottom:4px; }
+
+/* Ensure network, branch names and branch-menu titles are black in dark theme */
+body[data-theme="dark"] .sidebar .network-name,
+body[data-theme="dark"] .sidebar .branch-name,
+body[data-theme="dark"] .sidebar .branch-menu .branch-menu-section .branch-menu-title,
+body[data-theme="dark"] .sidebar .branch-menu .branch-menu-section .branch-menu-header,
+.dark-theme .sidebar .network-name,
+.dark-theme .sidebar .branch-name,
+.dark-theme .sidebar .branch-menu .branch-menu-section .branch-menu-title,
+.dark-theme .sidebar .branch-menu .branch-menu-section .branch-menu-header {
+  color: #0d0d0d !important;
+}
+
+/* Ensure network dialog title is white in dark mode (override earlier dark rules) */
+body[data-theme="dark"] .sidebar .network-dialog-title,
+.dark-theme .sidebar .network-dialog-title {
+  color: #0d0d0d !important;
+}
+
+/* Ensure description paragraph in network dialog stays black in dark mode */
+body[data-theme="dark"] .sidebar .network-dialog-body p,
+.dark-theme .sidebar .network-dialog-body p {
+  color: #0d0d0d !important;
+}
+
+/* network-dialog title should be white (overrides when dialog header uses dark gradient) */
+.sidebar .network-dialog-title {
+  color: #fff !important;
+}
+
+/* Specifically keep the branch-type dialog title white in dark mode */
+body[data-theme="dark"] .sidebar .network-dialog-header .network-dialog-title,
+.dark-theme .sidebar .network-dialog-header .network-dialog-title {
+  color: #ffffff !important;
+}
+
+/* Make the "Создать филиал" dialog title black in dark mode */
+body[data-theme="dark"] .sidebar .network-dialog-header.create-branch .network-dialog-title,
+.dark-theme .sidebar .network-dialog-header.create-branch .network-dialog-title {
+  color: #0d0d0d !important;
+}
+
+/* Make description inside network dialog black */
+.sidebar .network-dialog-body p {
+  color: #0d0d0d !important;
+}
 
 .mini-calendar {
   color: #fff;
@@ -57,6 +148,8 @@
   padding-top: 10px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
   padding-bottom: 10px;
+  flex-shrink: 0;
+  overflow: hidden;
 }
 
 .sidebar > .profile,
@@ -65,6 +158,18 @@
   margin-right: -20px;
   padding-left: 20px;
   padding-right: 20px;
+  flex-shrink: 0;
+}
+
+.sidebar > .profile {
+  background: var(--theme-sidebar-bg, #111827);
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.sidebar > .sidebar-footer {
+  background: var(--theme-sidebar-bg, #111827);
+  padding-bottom: 20px;
 }
 
 .sidebar > .mini-calendar {
@@ -108,6 +213,18 @@
   opacity: 1;
 }
 
+/* Стили для заголовков выходных дней */
+.mini-calendar .ui-datepicker-calendar thead th.weekday-weekend {
+  color: #93c5fd;
+  font-weight: 600;
+}
+
+/* Стили для заголовков праздничных дней */
+.mini-calendar .ui-datepicker-calendar thead th.weekday-holiday {
+  color: #fca5a5;
+  font-weight: 600;
+}
+
 .mini-calendar .ui-datepicker-calendar tbody {
   font-size: 12px;
 }
@@ -131,6 +248,7 @@
   font-size: 12px;
   font-weight: 550;
   cursor: pointer;
+  position: relative;
 }
 
 .mini-calendar .ui-priority-secondary {
@@ -153,6 +271,22 @@
 .mini-calendar .ui-datepicker-week-end .ui-state-default {
   color: rgba(255,255,255,0.9);
 }
+
+/* Стили для дат с праздниками */
+.mini-calendar .ui-state-default.day-is-holiday {
+  color: #fca5a5;
+  font-weight: 600;
+}
+
+/* Стили для заблокированных дат (после valid_until) */
+.mini-calendar td.date-blocked .ui-state-default {
+  opacity: 0.3;
+}
+
+.mini-calendar .ui-state-default.date-disabled {
+  opacity: 0.3;
+}
+
 
 .mini-calendar td.ui-datepicker-current-day.ui-datepicker-selected .ui-state-default {
   background: #efb42b;
@@ -272,9 +406,39 @@
   flex-direction: column;
   gap: 8px;
   padding-top: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  margin-right: -20px;
+  padding-right: 20px;
   /* padding-left: 6px;
   padding-right: 6px; */
 }
+
+/* Custom thin rounded scrollbar for the sidebar menu */
+.menu {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.14) transparent;
+}
+
+.menu::-webkit-scrollbar {
+  width: 8px;
+}
+.menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+.menu::-webkit-scrollbar-thumb {
+  background: rgba(255,255,255,0.12);
+  border-radius: 8px;
+  border: 2px solid transparent; /* gives padding effect */
+  background-clip: padding-box;
+}
+.menu::-webkit-scrollbar-thumb:hover {
+  background: rgba(255,255,255,0.18);
+}
+
+/* If you prefer to fully hide the scrollbar but keep scrolling, uncomment below */
+/* .menu { scrollbar-width: none; -ms-overflow-style: none; } .menu::-webkit-scrollbar { display: none; } */
 
 .menu-item {
   display: flex;
@@ -321,11 +485,6 @@
     opacity: 0.95; 
 }
 
-/* give a little more horizontal room visually */
-.sidebar { 
-    width: 200px; 
-}
-
 .menu-label { 
     display: inline-block; 
 }
@@ -336,9 +495,7 @@
 
 .profile {
   border-top: 1px solid rgba(255,255,255,0.2);
-  padding-top: 10px;
   border-bottom: 1px solid rgba(255,255,255,0.2);
-  padding-bottom: 10px;
 }
 
 .profile-button {
@@ -363,7 +520,7 @@
 }
 
 .sidebar-footer {
-  margin-top: 16px;
+  margin-top: 10px;
 }
 
 .logout-btn {
@@ -547,4 +704,33 @@
 
 .network-btn-secondary:hover {
   background: #e5e7eb;
+}
+
+/* Точка-индикатор для дат с записями */
+.appointment-indicator {
+  display: block;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Зеленый - записей до 10 */
+.appointment-indicator-green {
+  background: #22c55e;
+}
+
+/* Оранжевый - записей больше 10 */
+.appointment-indicator-orange {
+  background: #f97316;
+}
+
+/* Желтый - есть пакеты */
+.appointment-indicator-yellow {
+  background: #eab308;
 }

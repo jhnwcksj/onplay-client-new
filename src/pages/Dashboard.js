@@ -2,13 +2,25 @@ import React, { useEffect } from 'react';
 
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import DatePickerWithHints from '../components/DatePickerWithHints';
 import AccessDenied from './AccessDenied';
+import BookingDialog from '../components/BookingDialog';
+import { formatPhoneNumber } from '../utils/phoneFormatter';
+import { TIMEZONE_NAME } from '../utils/timezone';
+import { toast } from '../hooks/use-toast';
 import './Dashboard.css';
 
 
 export default function Dashboard() {
     // Состояние для лимита отображаемых визитов
     const [visitsLimit, setVisitsLimit] = React.useState(6);
+    // Состояние для лимита отображаемых записей истории
+    const [historyLimit, setHistoryLimit] = React.useState(5);
+    // Состояния для поиска и фильтров истории
+    const [historySearch, setHistorySearch] = React.useState('');
+    const [historyServiceFilter, setHistoryServiceFilter] = React.useState('');
+    const [historyDateFrom, setHistoryDateFrom] = React.useState('');
+    const [historyDateTo, setHistoryDateTo] = React.useState('');
   useEffect(() => { document.title = 'Сводка'; }, []);
 
   const API_URL = process.env.REACT_APP_API_URL;
@@ -20,6 +32,51 @@ export default function Dashboard() {
   const [selectedDate] = React.useState(() => {
     const d = new Date(); d.setHours(0,0,0,0); return d;
   });
+
+  // Determine whether the current app theme/background is dark and respond to changes
+  const darkThemeKeys = React.useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = React.useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7;
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') {
+          setIsDarkTheme(Boolean(e.detail.isDark));
+          return;
+        }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
 
   // Data will be provided by backend — read branchId from query param
   const location = useLocation();
@@ -37,23 +94,23 @@ export default function Dashboard() {
   // --- Вставить хуки и функции для визитов ---
   const [visitsTab, setVisitsTab] = React.useState('upcoming');
 
+  // --- Состояния для BookingDialog ---
+  const [bookingDialogOpen, setBookingDialogOpen] = React.useState(false);
+  const [selectedAppointment, setSelectedAppointment] = React.useState(null);
+
   // Состояния для клиентов, услуг и зон
   const [clients, setClients] = React.useState([]);
   const [services, setServices] = React.useState([]);
   const [zones, setZones] = React.useState([]);
-// Вспомогательная функция для форматирования телефона
-function formatPhone(phone) {
-  if (!phone) return '';
-  // Пример: +7 701 123-45-67
-  return phone.replace(/(\d{1})(\d{3})(\d{3})(\d{2})(\d{2})/, '+$1 $2 $3-$4-$5');
-}
 
   // Загрузка клиентов, услуг и зон для текущего филиала
   useEffect(() => {
     if (!branchId) return;
     let mounted = true;
     const fetchList = async (endpoint, setter, key) => {
-      const url = API_URL ? `${API_URL}/${endpoint}?branch_id=${encodeURIComponent(branchId)}` : `/${endpoint}?branch_id=${encodeURIComponent(branchId)}`;
+      // Для zones используем branchId, для остальных - branch_id
+      const paramName = endpoint === 'zones' ? 'branchId' : 'branch_id';
+      const url = API_URL ? `${API_URL}/${endpoint}?${paramName}=${encodeURIComponent(branchId)}` : `/${endpoint}?${paramName}=${encodeURIComponent(branchId)}`;
       try {
         const r = await fetch(url);
         if (!r.ok) throw new Error('Ошибка');
@@ -84,12 +141,12 @@ function formatPhone(phone) {
 
   function formatVisitDate(dateStr) {
     const d = new Date(dateStr);
-    return d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
+    return d.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long', timeZone: TIMEZONE_NAME() });
   }
   function formatTime(dt) {
     if (!dt) return '';
     const d = new Date(dt);
-    return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    return d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit', timeZone: TIMEZONE_NAME() });
   }
   function formatDuration(duration, start_time, end_time) {
     if (duration) {
@@ -112,14 +169,14 @@ function formatPhone(phone) {
   }
 
   const upcomingVisits = React.useMemo(() => {
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: TIMEZONE_NAME() }));
     return journal.filter(v => {
       const start = new Date(v.start_time);
       return start >= now;
     });
   }, [journal]);
   const pastVisits = React.useMemo(() => {
-    const now = new Date();
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: TIMEZONE_NAME() }));
     return journal.filter(v => {
       const start = new Date(v.start_time);
       return start < now;
@@ -203,6 +260,9 @@ function formatPhone(phone) {
   React.useEffect(() => {
     try {
       if (!branchId) { setBranchAccessDenied(false); return; }
+      // Admin bypass: allow access to any branch
+      const stored = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+      if (stored && stored.role === 'admin') { setBranchAccessDenied(false); return; }
       if (userBranches === null) return; // not yet loaded
       const found = userBranches.find(b => String(b.branch_id || b.id || b.branchId) === String(branchId));
       setBranchAccessDenied(!Boolean(found));
@@ -213,6 +273,35 @@ function formatPhone(phone) {
   const [history, setHistory] = React.useState([]);
   const [loadingHistory, setLoadingHistory] = React.useState(false);
   const [historyError, setHistoryError] = React.useState(null);
+  
+  // Доступные даты в истории (для подсказок в календаре)
+  const availableDatesInHistory = React.useMemo(() => {
+    return [...new Set(
+      history.map(h => {
+        const events = [h];
+        let last = null;
+        for (let i = events.length - 1; i >= 0; --i) {
+          const event = events[i];
+          if (event.changes && (event.changes.after || event.changes)) {
+            last = event.changes.after || event.changes;
+            break;
+          }
+        }
+        if (!last) last = events[0].changes?.after || events[0].changes || {};
+        
+        const appointment = journal.find(a => String(a.id) === String(h.appointment_id));
+        let date = '';
+        if (appointment && appointment.start_time) {
+          const d = new Date(appointment.start_time);
+          date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        } else if (last.start_time || last.date) {
+          const d = new Date(last.start_time || last.date);
+          date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+        return date;
+      }).filter(d => d)
+    )].sort();
+  }, [history, journal]);
 
   useEffect(() => {
     if (!branchId) return;
@@ -229,6 +318,10 @@ function formatPhone(phone) {
     return () => { mounted = false; };
   }, [branchId]);
 
+  const userName = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь';
+  const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com';
+  const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role || 'user' : 'user';
+
   return (
     <div className="timetable-wrapper dashboard-page">
       <Sidebar
@@ -236,13 +329,14 @@ function formatPhone(phone) {
         setCalendarDate={() => {}}
         selectedDate={selectedDate}
         setSelectedDate={() => {}}
-        userName={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь'}
-        userEmail={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com'}
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
         loadingUser={false}
         userError={null}
       />
 
-      <div className="dashboard-content">
+      <div className={`dashboard-content ${isDarkTheme ? 'dark-theme' : ''}`}>
         <header className="dashboard-header">
           <button className="burger">☰</button>
           <div>
@@ -313,7 +407,10 @@ function formatPhone(phone) {
                           {visits.map(({ visit, idx }) => {
                             const client = clients.find(c => String(c.client_id) === String(visit.client_id));
                             return (
-                              <div key={idx} className="visit-row styled-visit-row">
+                              <div 
+                                key={idx} 
+                                className="visit-row styled-visit-row"
+                              >
                                 <div className="visit-time-block centered-vertical">
                                   <div className="visit-clock styled-visit-clock">{formatTime(visit.start_time)}</div>
                                   <div className="visit-duration styled-visit-duration">{formatDuration(visit.duration_minutes, visit.start_time, visit.end_time)}</div>
@@ -323,7 +420,7 @@ function formatPhone(phone) {
                                   <div className="visit-client styled-visit-client bolder-text">
                                     <span className="visit-client-name styled-visit-client-name bolder-text">{client ? client.name : 'Клиент'}</span>
                                     {client && client.phone && (
-                                      <span className="visit-client-phone styled-visit-client-phone bolder-text"> / {formatPhone(client.phone)}</span>
+                                      <span className="visit-client-phone styled-visit-client-phone bolder-text"> / {formatPhoneNumber(client.phone)}</span>
                                     )}
                                   </div>
                                   <div style={{ height: 6 }} />
@@ -356,6 +453,136 @@ function formatPhone(phone) {
           <div className="main-col">
             <div className="card card-activity">
               <div className="card-title">Лента активности по записям</div>
+              
+              {/* Поиск и фильтры */}
+              { branchId && !loadingHistory && history.length > 0 && (
+                <div className="history-filters">
+                  <div className="history-search-row">
+                    <input
+                      type="text"
+                      className="history-search-input"
+                      placeholder="Поиск по имени или номеру телефона..."
+                      value={historySearch}
+                      onChange={(e) => setHistorySearch(e.target.value)}
+                    />
+                  </div>
+                  <div className="history-filter-row">
+                    <select
+                      className="history-filter-select"
+                      value={historyServiceFilter}
+                      onChange={(e) => setHistoryServiceFilter(e.target.value)}
+                    >
+                      <option value="">Все услуги</option>
+                      {services.map(s => (
+                        <option key={s.service_id} value={s.service_id}>{s.name}</option>
+                      ))}
+                    </select>
+                    <div className="history-date-range">
+                      <DatePickerWithHints
+                        value={historyDateFrom}
+                        onChange={(e) => setHistoryDateFrom(e.target.value)}
+                        placeholder="От"
+                        title="Дата начала периода"
+                        availableDates={availableDatesInHistory}
+                      />
+                      <span className="date-separator">—</span>
+                      <DatePickerWithHints
+                        value={historyDateTo}
+                        onChange={(e) => setHistoryDateTo(e.target.value)}
+                        placeholder="До"
+                        title="Дата окончания периода"
+                        availableDates={availableDatesInHistory}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Подсказка о доступных датах и кнопка сброса */}
+                  {(historySearch || historyServiceFilter || historyDateFrom || historyDateTo) && (
+                    <div className="history-filters-footer">
+                      {/* Показываем подсказку только если выбраны даты */}
+                      {(historyDateFrom || historyDateTo) && (() => {
+                        // Считаем количество уникальных записей (appointments) в выбранном диапазоне
+                        const uniqueAppointmentIds = new Set();
+                        const fromDate = historyDateFrom || '0000-01-01';
+                        const toDate = historyDateTo || '9999-12-31';
+                        
+                        history.forEach(h => {
+                          const appointment = journal.find(a => String(a.id) === String(h.appointment_id));
+                          
+                          if (appointment && appointment.start_time) {
+                            const d = new Date(appointment.start_time);
+                            const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                            
+                            if (date >= fromDate && date <= toDate) {
+                              uniqueAppointmentIds.add(h.appointment_id);
+                            }
+                          } else {
+                            // Если appointment не найден в journal, пытаемся получить дату из истории
+                            const events = [h];
+                            let last = null;
+                            for (let i = events.length - 1; i >= 0; --i) {
+                              const event = events[i];
+                              if (event.changes && (event.changes.after || event.changes)) {
+                                last = event.changes.after || event.changes;
+                                break;
+                              }
+                            }
+                            if (!last) last = events[0].changes?.after || events[0].changes || {};
+                            
+                            if (last.start_time || last.date) {
+                              const d = new Date(last.start_time || last.date);
+                              const date = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                              
+                              if (date >= fromDate && date <= toDate) {
+                                uniqueAppointmentIds.add(h.appointment_id);
+                              }
+                            }
+                          }
+                        });
+                        
+                        const count = uniqueAppointmentIds.size;
+                        
+                        const formatDate = (dateStr) => {
+                          if (!dateStr) return '';
+                          const d = new Date(dateStr + 'T00:00:00');
+                          return d.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' });
+                        };
+                        
+                        let dateRangeText = '';
+                        if (historyDateFrom && historyDateTo) {
+                          dateRangeText = `с ${formatDate(historyDateFrom)} по ${formatDate(historyDateTo)}`;
+                        } else if (historyDateFrom) {
+                          dateRangeText = `с ${formatDate(historyDateFrom)}`;
+                        } else if (historyDateTo) {
+                          dateRangeText = `по ${formatDate(historyDateTo)}`;
+                        }
+                        
+                        return (
+                          <div className="history-dates-hint">
+                            <span className="hint-icon">📅</span>
+                            <span className="hint-text">
+                              Записей {dateRangeText}: {count}
+                            </span>
+                          </div>
+                        );
+                      })()}
+                      
+                      <button
+                        className="history-clear-filters"
+                        onClick={() => {
+                          setHistorySearch('');
+                          setHistoryServiceFilter('');
+                          setHistoryDateFrom('');
+                          setHistoryDateTo('');
+                        }}
+                      >
+                        Сбросить фильтры
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) }
+              
               { !branchId && (
                 <div className="clients-empty">Выберите филиал, чтобы увидеть журнал записей</div>
               ) }
@@ -370,23 +597,146 @@ function formatPhone(phone) {
               { branchId && !loadingHistory && history.length > 0 && (
                 <div className="activity-feed">
                   {/* Сортировка истории по changed_at по убыванию */}
-                  {Object.entries(
-                    // Группируем события по appointment_id
-                    history
-                      .slice()
-                      .reduce((acc, h) => {
-                        const id = h.appointment_id || h.appointmentId || 'noid_' + h.history_id;
-                        if (!acc[id]) acc[id] = [];
-                        acc[id].push(h);
-                        return acc;
-                      }, {})
-                  )
-                  // Сортируем группы по максимальному changed_at (новые группы сверху)
-                  .sort(([, eventsA], [, eventsB]) => {
-                    const maxA = Math.max(...eventsA.map(e => new Date(e.changed_at).getTime()));
-                    const maxB = Math.max(...eventsB.map(e => new Date(e.changed_at).getTime()));
-                    return maxB - maxA;
-                  })
+                  {(() => {
+                    // Функция для получения данных из записи
+                    const getRecordData = (events) => {
+                      let last = null;
+                      for (let i = events.length - 1; i >= 0; --i) {
+                        const h = events[i];
+                        if (h.changes && (h.changes.after || h.changes)) {
+                          last = h.changes.after || h.changes;
+                          break;
+                        }
+                      }
+                      if (!last) last = events[0].changes?.after || events[0].changes || {};
+                      
+                      let clientName = '';
+                      let clientPhone = '';
+                      
+                      // Попытка получить client_id для поиска в массиве clients
+                      let clientId = null;
+                      if (last.client_id) {
+                        clientId = last.client_id;
+                      }
+                      
+                      // Поиск клиента в массиве clients по client_id
+                      if (clientId) {
+                        const client = clients.find(c => String(c.client_id) === String(clientId));
+                        if (client) {
+                          clientName = client.name || '';
+                          clientPhone = client.phone || '';
+                        }
+                      }
+                      
+                      // Если не нашли по client_id, пробуем другие варианты
+                      if (!clientName && last.client) {
+                        if (typeof last.client === 'string') {
+                          try { const c = JSON.parse(last.client); clientName = c.name || ''; clientPhone = c.phone || ''; } catch { clientName = last.client; }
+                        } else if (typeof last.client === 'object') {
+                          clientName = last.client.name || '';
+                          clientPhone = last.client.phone || '';
+                        }
+                      } else if (!clientName && last.client_name) {
+                        clientName = last.client_name;
+                        clientPhone = last.client_phone || '';
+                      }
+                      
+                      let serviceId = null;
+                      const appointment = journal.find(a => String(a.id) === String(events[0].appointment_id));
+                      if (appointment && appointment.service_id) {
+                        serviceId = appointment.service_id;
+                      } else if (last.service_id) {
+                        serviceId = last.service_id;
+                      } else if (last.service) {
+                        serviceId = last.service;
+                      }
+                      
+                      let date = '';
+                      if (appointment && appointment.start_time) {
+                        date = new Date(appointment.start_time).toISOString().slice(0, 10);
+                      } else if (last.start_time || last.date) {
+                        date = new Date(last.start_time || last.date).toISOString().slice(0, 10);
+                      }
+                      
+                      return { clientName, clientPhone, serviceId, date };
+                    };
+                    
+                    const groupedHistory = Object.entries(
+                      // Группируем события по appointment_id
+                      history
+                        .slice()
+                        .reduce((acc, h) => {
+                          const id = h.appointment_id || h.appointmentId || 'noid_' + h.history_id;
+                          if (!acc[id]) acc[id] = [];
+                          acc[id].push(h);
+                          return acc;
+                        }, {})
+                    )
+                    // Сортируем группы по максимальному changed_at (новые группы сверху)
+                    .sort(([, eventsA], [, eventsB]) => {
+                      const maxA = Math.max(...eventsA.map(e => new Date(e.changed_at).getTime()));
+                      const maxB = Math.max(...eventsB.map(e => new Date(e.changed_at).getTime()));
+                      return maxB - maxA;
+                    })
+                    // Применяем фильтры
+                    .filter(([appointmentId, events]) => {
+                      const data = getRecordData(events);
+                      
+                      // Фильтр по поиску (имя или телефон)
+                      if (historySearch) {
+                        const search = historySearch.toLowerCase().trim();
+                        const nameMatch = data.clientName.toLowerCase().includes(search);
+                        
+                        // Поиск по телефону: учитываем что в БД хранится с 7, но пользователь может ввести +7 или 8
+                        let phoneMatch = false;
+                        if (search) {
+                          const searchDigits = search.replace(/\D/g, '');
+                          const clientDigits = data.clientPhone.replace(/\D/g, '');
+                          
+                          if (searchDigits) {
+                            // Если пользователь ввел 8, заменяем на 7 для поиска
+                            const normalizedSearch = searchDigits.startsWith('8') ? '7' + searchDigits.slice(1) : searchDigits;
+                            const normalizedClient = clientDigits.startsWith('8') ? '7' + clientDigits.slice(1) : clientDigits;
+                            
+                            phoneMatch = normalizedClient.includes(normalizedSearch);
+                          }
+                        }
+                        
+                        if (!nameMatch && !phoneMatch) return false;
+                      }
+                      
+                      // Фильтр по услуге
+                      if (historyServiceFilter) {
+                        // Проверяем и service_id и service_name для большей надежности
+                        const serviceMatch = String(data.serviceId) === String(historyServiceFilter);
+                        if (!serviceMatch) return false;
+                      }
+                      
+                      // Фильтр по диапазону дат
+                      if (historyDateFrom || historyDateTo) {
+                        if (!data.date) return false;
+                        
+                        if (historyDateFrom && data.date < historyDateFrom) return false;
+                        if (historyDateTo && data.date > historyDateTo) return false;
+                      }
+                      
+                      return true;
+                    });
+                    
+                    const shownHistory = groupedHistory.slice(0, historyLimit);
+                    
+                    // Если после фильтрации нет результатов
+                    if (groupedHistory.length === 0) {
+                      return (
+                        <div className="clients-empty">
+                          По заданным фильтрам ничего не найдено
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <>
+                        {shownHistory
                   .map(([appointmentId, events], groupIdx) => {
                     // Сортируем события внутри группы:
                     // 1. Сначала все update (по возрастанию changed_at)
@@ -429,7 +779,10 @@ function formatPhone(phone) {
                     }
                     // Для каждого события внутри appointment_id
                     return (
-                      <div key={appointmentId} className="activity-item activity-grouped-item">
+                      <div 
+                        key={appointmentId} 
+                        className="activity-item activity-grouped-item"
+                      >
                         {/* Шапка: дата, зоны, длительность, клиент — одной строкой */}
                         {(() => {
                           let last = null;
@@ -493,7 +846,7 @@ function formatPhone(phone) {
                               <span className="activity-group-date">{dateTime}</span>
                               <span className="activity-group-service">{serviceName}</span>
                               <span className="activity-group-duration">{f.duration}</span>
-                              <span className="activity-group-client">{f.clientName}{f.clientPhone && <span style={{color:'#888'}}> / +{f.clientPhone}</span>}</span>
+                              <span className="activity-group-client">{f.clientName}{f.clientPhone && <span style={{color:'#888'}}> / {formatPhoneNumber(f.clientPhone)}</span>}</span>
                             </div>
                           );
                         })()}
@@ -523,6 +876,23 @@ function formatPhone(phone) {
                                 }
                               }
                             }
+
+                            // Проверяем, есть ли реальные изменения для события update
+                            if (isUpdate && prev) {
+                              const allowedFields = [
+                                'date', 'duration', 'duration_minutes', 'participants', 'quantity', 'final_price', 'status', 'comment', 'payment_method', 'time_from', 'time_to', 'time'
+                              ];
+                              const before = prev;
+                              const after = changes.after || changes;
+                              const keys = Object.keys({ ...before, ...after });
+                              const changed = keys.filter(k => allowedFields.includes(k) && JSON.stringify(before[k]) !== JSON.stringify(after[k]));
+                              
+                              // Если нет изменений, не показываем это событие
+                              if (!changed.length) {
+                                return null;
+                              }
+                            }
+
                             return (
                               <div key={h.history_id || idx} className="activity-group-event-item">
                                 <div className="activity-meta-row">
@@ -617,6 +987,16 @@ function formatPhone(phone) {
                       </div>
                     );
                   })}
+                        {groupedHistory.length > historyLimit && (
+                          <div style={{ textAlign: 'center', margin: '16px 0' }}>
+                            <button className="show-more-btn" onClick={() => setHistoryLimit(historyLimit + 5)}>
+                              Показать еще
+                            </button>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               ) }
 
@@ -626,6 +1006,27 @@ function formatPhone(phone) {
         </main>
         )}
       </div>
+
+      {/* BookingDialog для изменения записи */}
+      {bookingDialogOpen && selectedAppointment && (
+        <BookingDialog
+          open={bookingDialogOpen}
+          onClose={() => {
+            setBookingDialogOpen(false);
+            setSelectedAppointment(null);
+          }}
+          branchId={branchId}
+          date={selectedAppointment.date || selectedAppointment.start_time?.split('T')[0]}
+          timeFrom={selectedAppointment.time_from || selectedAppointment.start_time?.split('T')[1]?.slice(0, 5)}
+          timeTo={selectedAppointment.time_to || selectedAppointment.end_time?.split('T')[1]?.slice(0, 5)}
+          zoneId={selectedAppointment.zone_id}
+          appointmentId={selectedAppointment.id}
+          onAppointmentChange={() => {
+            // Обновить данные после изменения
+            window.location.reload();
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Sidebar from '../components/Sidebar';
 import noAvatarImg from '../images/no_image.png';
+import { formatPhoneNumber } from '../utils/phoneFormatter';
 import './Profile.css';
 
 export default function Profile() {
@@ -21,6 +22,7 @@ export default function Profile() {
   const [userName, setUserName] = useState(storedUser.name || 'Пользователь');
   const [userEmail, setUserEmail] = useState(storedUser.email || 'email@example.com');
   const [userPhone, setUserPhone] = useState(storedUser.phone || '+7 ___ ___-__-__');
+  const userRole = storedUser.role || 'user';
   const avatarUrl = storedUser.avatar || noAvatarImg;
 
   const [nameInput, setNameInput] = useState(storedUser.name || '');
@@ -37,6 +39,46 @@ export default function Profile() {
   const [selectedDate] = React.useState(() => {
     const d = new Date(); d.setHours(0,0,0,0); return d;
   });
+
+  // Theme detection (apply dark-theme class when background/theme is dark)
+  const darkThemeKeys = React.useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7;
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch { return false; }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') { setIsDarkTheme(Boolean(e.detail.isDark)); return; }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
 
   const token = localStorage.getItem('token');
 
@@ -233,11 +275,12 @@ export default function Profile() {
         setSelectedDate={() => {}}
         userName={userName}
         userEmail={userEmail}
+        userRole={userRole}
         loadingUser={false}
         userError={null}
       />
 
-      <div className="profile-page">
+      <div className={`profile-page ${isDarkTheme ? 'dark-theme' : ''}`}>
         <div className="profile-page-header">
           <div className="profile-page-breadcrumb">Личный кабинет</div>
           <h1 className="profile-page-title">Настройки личных данных</h1>
@@ -257,7 +300,7 @@ export default function Profile() {
                 }}
               />
               <div className="profile-side-name">{userName}</div>
-              <div className="profile-side-phone">{userPhone}</div>
+              <div className="profile-side-phone">{formatPhoneNumber(userPhone)}</div>
               <div className="profile-side-email">{userEmail}</div>
             </div>
 
@@ -347,7 +390,7 @@ export default function Profile() {
               <div className="profile-form-grid">
                 <div className="form-row">
                   <label className="form-label">Текущий номер</label>
-                  <div className="form-static">{userPhone}</div>
+                  <div className="form-static">{formatPhoneNumber(userPhone)}</div>
                 </div>
               </div>
               <button type="button" className="btn btn-primary" onClick={handleChangePhone}>

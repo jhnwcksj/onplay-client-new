@@ -1,8 +1,8 @@
-.networks-content{flex:1;padding:28px 32px;background:#f8fafc}
+.networks-content{flex:1;padding:28px 32px;background:var(--theme-page-background, #f8fafc)}
 .networks-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-.networks-header h1{margin:0;font-size:22px;color:#111827}
-.networks-burger{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:white;border:1px solid #e6edf3;box-shadow:0 2px 6px rgba(16,24,40,0.04)}
-.networks-panel{background:#fff;border-radius:12px;padding:20px;border:1px solid #eef2f7}
+.networks-header h1{margin:0;font-size:22px;color:var(--theme-text, #111827)}
+.networks-burger{width:38px;height:38px;display:inline-flex;align-items:center;justify-content:center;border-radius:8px;background:var(--theme-card-bg, white);border:1px solid var(--theme-border, #e6edf3);box-shadow:0 2px 6px rgba(16,24,40,0.04)}
+.networks-panel{background:var(--theme-card-bg, #fff);border-radius:12px;padding:20px;border:1px solid var(--theme-border, #eef2f7)}
 .networks-groups{display:flex;flex-direction:column;gap:16px}
 .networks-empty{padding:14px;color:#6b7280}
 .networks-error{color:#b91c1c}
@@ -11,7 +11,6 @@
   .networks-content{padding:20px}
 }
 
-/* Редактор филиала: левые секции как в Altegio */
 .branch-editor-layout{
   display:flex;
   align-items:flex-start;
@@ -53,8 +52,8 @@
 .branch-editor-content{
   flex:1;
   border-radius:8px;
-  border:1px solid #e5e7eb;
-  background:#ffffff;
+  border:1px solid var(--theme-border, #e5e7eb);
+  background:var(--theme-card-bg, #ffffff);
   padding:14px 18px 16px 18px;
 }
 
@@ -69,7 +68,12 @@
 .service-editor-top-title{
   font-size:16px;
   font-weight:600;
-  color:#111827;
+  color:var(--theme-text, #111827);
+}
+
+/* Force editor top titles (Сеть:/Филиал:) to black when rendered inside networks page */
+.networks-content .service-editor-top-title {
+  color: #111827 !important;
 }
 
 .service-editor-top-close{
@@ -86,4 +90,65 @@
 .service-editor-top-close:hover{
   background:#f3f4f6;
   color:#111827;
+}
+
+/* Force branch table text (Филиал, Адрес, Телефон, Сайт) to be dark for readability */
+.networks-content .service-name,
+.networks-content .service-duration,
+.networks-content .service-zones,
+.networks-content .service-zones span {
+  color: #111827 !important;
+}
+
+/* Also ensure table headers and rows use dark text */
+.networks-content .service-table-head div,
+.networks-content .service-row {
+  color: #111827 !important;
+}
+
+/* Apply same override when dark-theme or other dark markers are present */
+.networks-content.dark-theme .service-name,
+.dark .networks-content .service-name,
+body.dark .networks-content .service-name,
+html.dark .networks-content .service-name,
+.networks-content.dark-theme .service-duration,
+.dark .networks-content .service-duration,
+body.dark .networks-content .service-duration,
+html.dark .networks-content .service-duration,
+.networks-content.dark-theme .service-zones span,
+.dark .networks-content .service-zones span,
+body.dark .networks-content .service-zones span,
+html.dark .networks-content .service-zones span {
+  color: #111827 !important;
+}
+
+/* Force editor top titles (Сеть: / Филиал:) to remain dark for readability */
+.networks-content.dark-theme .service-editor-top-title,
+.dark .networks-content .service-editor-top-title,
+body.dark .networks-content .service-editor-top-title,
+html.dark .networks-content .service-editor-top-title {
+  color: #111827 !important;
+}
+
+
+
+
+/* Strong override: force readable black text inside networks area (cards and editor dialogs) */
+.networks-content .service-category-card,
+.networks-content .service-category-card *,
+.networks-content .service-editor-dialog,
+.networks-content .service-editor-dialog * {
+  color: #111827 !important;
+}
+
+/* Also ensure dialog subtitles and labels are dark */
+.networks-content .service-editor-subtitle,
+.networks-content .service-editor-field-label,
+.networks-content .service-editor-title {
+  color: #6b7280 !important;
+}
+
+/* Global strong fallback: ensure editor top title is always readable (black) */
+.service-editor-top-title {
+  color: #111827 !important;
 }

@@ -1,18 +1,28 @@
-<<<<<<< HEAD
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Login from "./pages/Login";
 import Timetable from "./pages/Timetable";
 import Dashboard from "./pages/Dashboard";
+import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import NetworksSettings from "./pages/NetworksSettings";
+import BackgroundSettings from "./pages/BackgroundSettings";
 import Profile from "./pages/Profile";
 import Zones from "./pages/Zones";
 import Services from "./pages/Services";
+import Calendar from "./pages/Calendar";
 import NotFound from "./pages/NotFound";
 import Clients from "./pages/Clients";
+import BookingSettings from "./pages/BookingSettings";
+import OnlineBooking from "./pages/OnlineBooking";
+import BookingDetails from "./pages/BookingDetails";
+import Management from "./pages/Management";
+import License from "./pages/License";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import BranchProtectedRoute from "./routes/BranchProtectedRoute";
 import HomeRedirect from "./components/HomeRedirect";
+import { Toaster } from "./components/ui/toaster";
+import { checkAndUpdateAppVersion, checkServerDataVersion } from "./utils/storageVersion";
         
   
 function RedirectToUserTimetable() {
@@ -49,11 +59,55 @@ function RedirectToUserTimetable() {
 }
 
 function App() {
+  // Проверка версии приложения при запуске
+  useEffect(() => {
+    // Проверка версии приложения (клиентская версия)
+    const wasUpdated = checkAndUpdateAppVersion();
+    
+    if (wasUpdated) {
+      console.log('[App] Приложение было обновлено, данные синхронизированы');
+    }
+    
+    // Проверка версии данных на сервере (если пользователь авторизован)
+    const checkServerVersion = async () => {
+      const token = localStorage.getItem('token');
+      if (!token) return;
+      
+      try {
+        const API_URL = process.env.REACT_APP_API_URL;
+        if (!API_URL) return;
+        
+        const needsUpdate = await checkServerDataVersion(API_URL, token);
+        
+        if (needsUpdate) {
+          console.log('[App] Обнаружены обновления данных на сервере');
+          // Можно показать уведомление пользователю
+          // toast({ title: 'Данные обновлены', description: 'Обнаружены новые данные' });
+        }
+      } catch (error) {
+        console.error('[App] Ошибка проверки версии на сервере:', error);
+      }
+    };
+    
+    checkServerVersion();
+    
+    // Периодическая проверка версии на сервере (каждые 30 минут)
+    const intervalId = setInterval(checkServerVersion, 30 * 60 * 1000);
+    
+    return () => clearInterval(intervalId);
+  }, []);
+  
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/login" element={<Login />} />
+        
+        {/* Публичные маршруты для онлайн-записи */}
+        <Route path="/booking/:slug" element={<OnlineBooking />} />
+        <Route path="/booking/:slug/:publicCode" element={<OnlineBooking />} />
+        <Route path="/booking-direct/:publicCode" element={<OnlineBooking />} />
+        <Route path="/booking-details/:publicCode" element={<BookingDetails />} />
         <Route path="/clients" element={
           <ProtectedRoute>
             <Clients />
@@ -64,6 +118,14 @@ function App() {
           <ProtectedRoute>
             <BranchProtectedRoute>
               <Dashboard />
+            </BranchProtectedRoute>
+          </ProtectedRoute>
+        } />
+
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <BranchProtectedRoute>
+              <Analytics />
             </BranchProtectedRoute>
           </ProtectedRoute>
         } />
@@ -87,6 +149,18 @@ function App() {
         <Route path="/settings" element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/license" element={
+          <ProtectedRoute>
+            <License />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/management" element={
+          <ProtectedRoute>
+            <Management />
           </ProtectedRoute>
         } />
 
@@ -114,34 +188,30 @@ function App() {
           </ProtectedRoute>
         } />
 
+        <Route path="/settings/background" element={
+          <ProtectedRoute>
+            <BackgroundSettings />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/settings/calendar" element={
+          <ProtectedRoute>
+            <Calendar />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/onlinebooking" element={
+          <ProtectedRoute>
+            <BookingSettings />
+          </ProtectedRoute>
+        } />
+
         {/* catch-all 404 (keep last) */}
         <Route path="*" element={<NotFound />} />
 
       </Routes>
+      <Toaster />
     </BrowserRouter>
-=======
-import logo from './logo.svg';
-import './App.css';
-
-function App() {
-  return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
->>>>>>> 8941728 (Initialize project using Create React App)
   );
 }
 

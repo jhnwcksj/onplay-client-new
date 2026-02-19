@@ -2,6 +2,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { toast } from '../hooks/use-toast';
 import './Services.css';
 // Declare API_URL once at the top
 const API_URL = process.env.REACT_APP_API_URL;
@@ -43,6 +44,8 @@ export default function Services() {
   }));
   const [serviceDialogSelectedZoneIds, setServiceDialogSelectedZoneIds] = useState([]);
   const [serviceDialogSaving, setServiceDialogSaving] = useState(false);
+  const [serviceDialogWeekOverrides, setServiceDialogWeekOverrides] = useState({});
+  // weekOverrides format: { 0: 'weekday', 6: 'weekend', ... } где ключ - weekday (0-6)
 
   const location = useLocation();
   const query = new URLSearchParams(location.search);
@@ -61,9 +64,58 @@ export default function Services() {
       try {
         const token = localStorage.getItem('token');
         const branchId = resolveBranchId();
+        
+        // ВАЖНО: Если branchId не указан, не загружаем услуги - это предотвращает
+        // показ всех услуг пользователям без доступа к филиалам
+        if (!branchId) {
+          if (!mounted) return;
+          setCategories([]);
+          setError('Необходимо создать Сеть и Филиал для доступа к услугам');
+          setLoading(false);
+          return;
+        }
+
+        // Дополнительная проверка: проверяем доступ пользователя к филиалу
+        const stored = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+        const uid = stored?.id || localStorage.getItem('userId');
+        
+        // Admin bypass: allow access to any branch
+        const userRole = stored?.role || 'user';
+        if (userRole !== 'admin' && uid) {
+          // Загружаем филиалы пользователя для проверки доступа
+          const branchesEndpoints = [
+            `${API_URL}/users/${uid}/branches`,
+            `${API_URL}/branches?userId=${uid}`,
+            `${API_URL}/branches?user_id=${uid}`,
+          ];
+          
+          let userHasAccess = false;
+          for (const endpoint of branchesEndpoints) {
+            try {
+              const res = await fetch(endpoint, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+              if (res.ok) {
+                const data = await res.json();
+                const branches = Array.isArray(data) ? data : (data.branches || data.rows || []);
+                const found = branches.find(b => String(b.branch_id || b.id || b.branchId) === String(branchId));
+                if (found) {
+                  userHasAccess = true;
+                  break;
+                }
+              }
+            } catch {}
+          }
+          
+          if (!userHasAccess) {
+            if (!mounted) return;
+            setCategories([]);
+            setError('');
+            setLoading(false);
+            return;
+          }
+        }
+        
         const q = branchId ? `?branchId=${encodeURIComponent(branchId)}` : '';
 
-        const API_URL = process.env.REACT_APP_API_URL;
         // Получаем категории услуг для филиала
         const url = `${API_URL}/service-categories${q}`;
 
@@ -88,7 +140,7 @@ export default function Services() {
         // Получаем услуги для каждой категории
         for (const cat of cats) {
           try {
-            const servicesRes = await fetch(`${API_URL}/services?categoryId=${cat.category_id}`, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+            const servicesRes = await fetch(`${API_URL}/services?categoryId=${cat.category_id}&branchId=${encodeURIComponent(branchId)}`, { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
             if (servicesRes.ok) {
               const servicesData = await servicesRes.json();
               // Для каждой услуги загружаем цены
@@ -293,6 +345,11 @@ export default function Services() {
       if (!res.ok) {
         const text = await res.text();
         const action = isEdit ? 'сохранении' : 'создании';
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: `Не удалось ${isEdit ? 'сохранить' : 'создать'} категорию`
+        });
         throw new Error(`Ошибка при ${action}: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
@@ -308,6 +365,12 @@ export default function Services() {
         }
         const withServices = { ...saved, services: [] };
         return [...list, withServices];
+      });
+
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: `Категория ${isEdit ? 'обновлена' : 'создана'}`
       });
 
       setEditingCategory(null);
@@ -337,12 +400,23 @@ export default function Services() {
 
       if (!res.ok) {
         const text = await res.text();
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось удалить категорию'
+        });
         throw new Error(`Ошибка при удалении: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
       setCategories(prev => {
         const list = Array.isArray(prev) ? prev : [];
         return list.filter(cat => cat.category_id !== editingCategory.category_id);
+      });
+
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Категория удалена'
       });
 
       setEditingCategory(null);
@@ -369,6 +443,7 @@ export default function Services() {
     });
     setServiceDialogSelectedZoneIds([]);
     setServiceDialogSaving(false);
+    setServiceDialogWeekOverrides({});
     setShowServiceDialog(true);
   };
 
@@ -620,6 +695,26 @@ export default function Services() {
 
       setServiceDialogUseRange(true);
       setServiceDialogPriceRules(nextRules);
+      
+      // Загружаем week overrides для услуги
+      try {
+        const overridesRes = await fetch(`${API_URL}/services/${serviceId}/week-overrides`, {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+        
+        if (overridesRes.ok) {
+          const overridesData = await overridesRes.json();
+          const overrides = {};
+          if (Array.isArray(overridesData.overrides)) {
+            overridesData.overrides.forEach(o => {
+              overrides[o.weekday] = o.override_day_type;
+            });
+          }
+          setServiceDialogWeekOverrides(overrides);
+        }
+      } catch (err) {
+        console.error('Error loading week overrides:', err);
+      }
     } catch (e) {
       // Если не удалось загрузить правила — оставляем базовое состояние
     }
@@ -632,7 +727,7 @@ export default function Services() {
 
     const currentCatId = serviceDialogSelectedCategoryId || (serviceDialogCategory && serviceDialogCategory.category_id);
     if (!currentCatId) {
-      alert('Не выбрана категория услуги');
+      toast({ title: 'Ошибка', description: 'Не выбрана категория услуги', variant: 'destructive' });
       return;
     }
 
@@ -665,10 +760,44 @@ export default function Services() {
 
       if (!res.ok) {
         const text = await res.text();
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось создать услугу'
+        });
         throw new Error(`Ошибка при создании услуги: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
       const created = await res.json();
+
+      // Сохраняем переопределения дней недели для новой услуги
+      const serviceIdForOverrides = created.service_id;
+      if (serviceIdForOverrides) {
+        try {
+          // Проходим по всем дням недели (0-6)
+          for (let weekday = 0; weekday <= 6; weekday++) {
+            if (serviceDialogWeekOverrides[weekday]) {
+              // Есть переопределение - сохраняем
+              await fetch(`${API_URL}/services/${serviceIdForOverrides}/week-overrides`, {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                  ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify({ weekday, override_day_type: serviceDialogWeekOverrides[weekday] })
+              });
+            } else {
+              // Нет переопределения - удаляем если есть
+              await fetch(`${API_URL}/services/${serviceIdForOverrides}/week-overrides/${weekday}`, {
+                method: 'DELETE',
+                headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+              }).catch(() => {}); // Игнорируем ошибку если записи нет
+            }
+          }
+        } catch (err) {
+          console.error('Error saving week overrides:', err);
+        }
+      }
 
       setCategories(prev => {
         const list = Array.isArray(prev) ? prev : [];
@@ -691,9 +820,15 @@ export default function Services() {
           : []
       }));
 
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Услуга создана'
+      });
+
       handleCloseServiceDialog();
     } catch (e) {
-      alert(e.message || 'Не удалось создать услугу');
+      toast({ title: 'Ошибка', description: e.message || 'Не удалось создать услугу', variant: 'destructive' });
       setServiceDialogSaving(false);
     }
   };
@@ -711,7 +846,7 @@ export default function Services() {
     const currentCatId = serviceDialogSelectedCategoryId || originalCatId;
 
     if (!currentCatId) {
-      alert('Не выбрана категория услуги');
+      toast({ title: 'Ошибка', description: 'Не выбрана категория услуги', variant: 'destructive' });
       return;
     }
 
@@ -744,10 +879,37 @@ export default function Services() {
 
       if (!res.ok) {
         const text = await res.text();
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось сохранить услугу'
+        });
         throw new Error(`Ошибка при сохранении услуги: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
       const updated = await res.json();
+
+      // Сохраняем переопределения дней недели для услуги
+      // Проходим по всем дням недели (0-6)
+      for (let weekday = 0; weekday <= 6; weekday++) {
+        if (serviceDialogWeekOverrides[weekday]) {
+          // Есть переопределение - сохраняем
+          await fetch(`${API_URL}/services/${serviceId}/week-overrides`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+            },
+            body: JSON.stringify({ weekday, override_day_type: serviceDialogWeekOverrides[weekday] })
+          });
+        } else {
+          // Нет переопределения - удаляем если есть
+          await fetch(`${API_URL}/services/${serviceId}/week-overrides/${weekday}`, {
+            method: 'DELETE',
+            headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+          }).catch(() => {}); // Игнорируем ошибку если записи нет
+        }
+      }
 
       setCategories(prev => {
         const list = Array.isArray(prev) ? prev : [];
@@ -785,9 +947,15 @@ export default function Services() {
           : []
       }));
 
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Услуга обновлена'
+      });
+
       handleCloseServiceDialog();
     } catch (e) {
-      alert(e.message || 'Не удалось сохранить услугу');
+      toast({ title: 'Ошибка', description: e.message || 'Не удалось сохранить услугу', variant: 'destructive' });
       setServiceDialogSaving(false);
     }
   };
@@ -811,6 +979,11 @@ export default function Services() {
 
       if (!res.ok) {
         const text = await res.text();
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось удалить услугу'
+        });
         throw new Error(`Ошибка при удалении услуги: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
@@ -831,9 +1004,15 @@ export default function Services() {
         return next;
       });
 
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Услуга удалена'
+      });
+
       handleCloseServiceDialog();
     } catch (e) {
-      alert(e.message || 'Не удалось удалить услугу');
+      toast({ title: 'Ошибка', description: e.message || 'Не удалось удалить услугу', variant: 'destructive' });
       setServiceDialogSaving(false);
     }
   };
@@ -943,6 +1122,55 @@ export default function Services() {
     !serviceDialogName.trim() ||
     serviceDialogSaving;
 
+  // Determine whether the current app theme/background is dark and respond to changes
+  const darkThemeKeys = React.useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7;
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') {
+          setIsDarkTheme(Boolean(e.detail.isDark));
+          return;
+        }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
+
+  const userName = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь';
+  const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com';
+  const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role || 'user' : 'user';
+
   return (
     <div className="timetable-wrapper">
       <Sidebar
@@ -950,13 +1178,22 @@ export default function Services() {
         setCalendarDate={() => {}}
         selectedDate={new Date()}
         setSelectedDate={() => {}}
-        userName={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь'}
-        userEmail={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com'}
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
         loadingUser={false}
         userError={null}
       />
 
-      <div className="services-content">
+      <div className={`services-content ${isDarkTheme ? 'dark-theme' : ''}`}>
+        {!resolveBranchId() ? (
+          <div className="services-no-branch">
+            <h2>Необходимо создать сеть и филиал</h2>
+            <p>Для работы с услугами требуется сначала создать сеть и филиал.</p>
+            <p>Перейдите в настройки для создания сети и филиала.</p>
+          </div>
+        ) : (
+          <>
         <div className="services-header">
           <div className="services-burger">☰</div>
           <h1>Услуги</h1>
@@ -1233,7 +1470,7 @@ export default function Services() {
             >
               {(() => {
                 const priceDayTypes = [
-                  { key: 'weekday', label: 'Будни' },
+                  { key: 'weekday', label: 'Будние' },
                   { key: 'weekend', label: 'Выходные' },
                   { key: 'holiday', label: 'Праздничные дни' }
                 ];
@@ -1538,6 +1775,50 @@ export default function Services() {
                         </div>
                       )}
                     </div>
+                    {/* Исключения для дней недели */}
+                    {serviceDialogUseRange && (
+                      <div className="service-editor-week-overrides-block">
+                        <div className="service-editor-price-range-header">
+                          <div className="service-editor-price-range-title">Исключения по дням недели</div>
+                          <div className="service-editor-price-range-subtitle">
+                            Переопределите тип дня для конкретных дней недели (например, услуга работает в выходные как в будни)
+                          </div>
+                        </div>
+                        <div className="service-editor-week-overrides-grid">
+                          {['Понедельник', 'Вторник', 'Среда', 'Четверг', 'Пятница', 'Суббота', 'Воскресенье'].map((dayName, idx) => {
+                            const weekday = idx === 6 ? 0 : idx + 1; // 0=вс, 1=пн, ..., 6=сб
+                            const override = serviceDialogWeekOverrides[weekday];
+                            
+                            return (
+                              <div key={weekday} className="service-editor-week-override-item">
+                                <div className="service-editor-week-override-day">{dayName}</div>
+                                <select
+                                  className="service-editor-week-override-select"
+                                  value={override || ''}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setServiceDialogWeekOverrides(prev => {
+                                      const next = { ...prev };
+                                      if (!val) {
+                                        delete next[weekday];
+                                      } else {
+                                        next[weekday] = val;
+                                      }
+                                      return next;
+                                    });
+                                  }}
+                                >
+                                  <option value="">По умолчанию (филиал)</option>
+                                  <option value="weekday">Будний день</option>
+                                  <option value="weekend">Выходной</option>
+                                  <option value="holiday">Праздник</option>
+                                </select>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
                     <div className="service-editor-form-row">
                       <label className="service-editor-field service-editor-duration-field">
                         <span>Длительность</span>
@@ -1656,6 +1937,8 @@ export default function Services() {
               })()}
             </div>
           </div>
+        )}
+          </>
         )}
       </div>
     </div>

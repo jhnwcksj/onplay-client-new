@@ -1,9 +1,14 @@
 import React from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { toast } from '../hooks/use-toast';
 import clientIcon from '../assets/icons/client_data.svg';
 import summaryIcon from '../assets/icons/summary.svg';
+import analyticsIcon from '../assets/icons/analytics.svg';
+import analyticsIcon2 from '../assets/icons/analytics2.svg';
 import bookingIcon from '../assets/icons/online-booking.svg';
 import settingsIcon from '../assets/icons/settings.svg';
+import managementIcon from '../assets/icons/management.svg';
+import licenseIcon from '../assets/icons/license.svg';
 import avatarImg from '../assets/images/avatar.png';
 import './Sidebar.css';
 
@@ -60,6 +65,86 @@ const COUNTRIES = [
   { code: 'CL', name: 'Чили' },
   { code: 'AU', name: 'Австралия' },
   { code: 'NZ', name: 'Новая Зеландия' },
+];
+
+const TIMEZONES = [
+  // Азия - СНГ
+  { value: 'Asia/Almaty', label: 'Алматы (UTC+5)' },
+  { value: 'Asia/Astana', label: 'Астана (UTC+5)' },
+  { value: 'Asia/Aqtau', label: 'Актау (UTC+5)' },
+  { value: 'Asia/Aqtobe', label: 'Актобе (UTC+5)' },
+  { value: 'Asia/Atyrau', label: 'Атырау (UTC+5)' },
+  { value: 'Asia/Oral', label: 'Уральск (UTC+5)' },
+  { value: 'Asia/Qostanay', label: 'Костанай (UTC+5)' },
+  { value: 'Asia/Qyzylorda', label: 'Кызылорда (UTC+5)' },
+  { value: 'Europe/Moscow', label: 'Москва (UTC+3)' },
+  { value: 'Europe/Samara', label: 'Самара (UTC+4)' },
+  { value: 'Asia/Yekaterinburg', label: 'Екатеринбург (UTC+5)' },
+  { value: 'Asia/Omsk', label: 'Омск (UTC+6)' },
+  { value: 'Asia/Novosibirsk', label: 'Новосибирск (UTC+7)' },
+  { value: 'Asia/Krasnoyarsk', label: 'Красноярск (UTC+7)' },
+  { value: 'Asia/Irkutsk', label: 'Иркутск (UTC+8)' },
+  { value: 'Asia/Yakutsk', label: 'Якутск (UTC+9)' },
+  { value: 'Asia/Vladivostok', label: 'Владивосток (UTC+10)' },
+  { value: 'Asia/Magadan', label: 'Магадан (UTC+11)' },
+  { value: 'Asia/Kamchatka', label: 'Камчатка (UTC+12)' },
+  { value: 'Europe/Kyiv', label: 'Киев (UTC+2)' },
+  { value: 'Europe/Minsk', label: 'Минск (UTC+3)' },
+  { value: 'Asia/Bishkek', label: 'Бишкек (UTC+6)' },
+  { value: 'Asia/Tashkent', label: 'Ташкент (UTC+5)' },
+  { value: 'Asia/Dushanbe', label: 'Душанбе (UTC+5)' },
+  { value: 'Asia/Ashgabat', label: 'Ашхабад (UTC+5)' },
+  { value: 'Asia/Baku', label: 'Баку (UTC+4)' },
+  { value: 'Asia/Yerevan', label: 'Ереван (UTC+4)' },
+  { value: 'Asia/Tbilisi', label: 'Тбилиси (UTC+4)' },
+  // Европа
+  { value: 'Europe/London', label: 'Лондон (UTC+0)' },
+  { value: 'Europe/Paris', label: 'Париж (UTC+1)' },
+  { value: 'Europe/Berlin', label: 'Берлин (UTC+1)' },
+  { value: 'Europe/Rome', label: 'Рим (UTC+1)' },
+  { value: 'Europe/Madrid', label: 'Мадрид (UTC+1)' },
+  { value: 'Europe/Amsterdam', label: 'Амстердам (UTC+1)' },
+  { value: 'Europe/Brussels', label: 'Брюссель (UTC+1)' },
+  { value: 'Europe/Zurich', label: 'Цюрих (UTC+1)' },
+  { value: 'Europe/Vienna', label: 'Вена (UTC+1)' },
+  { value: 'Europe/Warsaw', label: 'Варшава (UTC+1)' },
+  { value: 'Europe/Prague', label: 'Прага (UTC+1)' },
+  { value: 'Europe/Budapest', label: 'Будапешт (UTC+1)' },
+  { value: 'Europe/Bucharest', label: 'Бухарест (UTC+2)' },
+  { value: 'Europe/Sofia', label: 'София (UTC+2)' },
+  { value: 'Europe/Athens', label: 'Афины (UTC+2)' },
+  { value: 'Europe/Istanbul', label: 'Стамбул (UTC+3)' },
+  { value: 'Europe/Riga', label: 'Рига (UTC+2)' },
+  { value: 'Europe/Vilnius', label: 'Вильнюс (UTC+2)' },
+  { value: 'Europe/Tallinn', label: 'Таллин (UTC+2)' },
+  // Азия - Восток
+  { value: 'Asia/Dubai', label: 'Дубай (UTC+4)' },
+  { value: 'Asia/Jerusalem', label: 'Иерусалим (UTC+2)' },
+  { value: 'Asia/Shanghai', label: 'Шанхай (UTC+8)' },
+  { value: 'Asia/Hong_Kong', label: 'Гонконг (UTC+8)' },
+  { value: 'Asia/Tokyo', label: 'Токио (UTC+9)' },
+  { value: 'Asia/Seoul', label: 'Сеул (UTC+9)' },
+  { value: 'Asia/Singapore', label: 'Сингапур (UTC+8)' },
+  { value: 'Asia/Bangkok', label: 'Бангкок (UTC+7)' },
+  { value: 'Asia/Kolkata', label: 'Калькутта (UTC+5:30)' },
+  { value: 'Asia/Karachi', label: 'Карачи (UTC+5)' },
+  // Америка
+  { value: 'America/New_York', label: 'Нью-Йорк (UTC-5)' },
+  { value: 'America/Chicago', label: 'Чикаго (UTC-6)' },
+  { value: 'America/Denver', label: 'Денвер (UTC-7)' },
+  { value: 'America/Los_Angeles', label: 'Лос-Анджелес (UTC-8)' },
+  { value: 'America/Toronto', label: 'Торонто (UTC-5)' },
+  { value: 'America/Vancouver', label: 'Ванкувер (UTC-8)' },
+  { value: 'America/Mexico_City', label: 'Мехико (UTC-6)' },
+  { value: 'America/Sao_Paulo', label: 'Сан-Паулу (UTC-3)' },
+  { value: 'America/Argentina/Buenos_Aires', label: 'Буэнос-Айрес (UTC-3)' },
+  { value: 'America/Santiago', label: 'Сантьяго (UTC-3)' },
+  // Австралия и Океания
+  { value: 'Australia/Sydney', label: 'Сидней (UTC+10)' },
+  { value: 'Australia/Melbourne', label: 'Мельбурн (UTC+10)' },
+  { value: 'Australia/Brisbane', label: 'Брисбен (UTC+10)' },
+  { value: 'Australia/Perth', label: 'Перт (UTC+8)' },
+  { value: 'Pacific/Auckland', label: 'Окленд (UTC+12)' },
 ];
 
 const COUNTRY_CITIES = {
@@ -209,22 +294,27 @@ const COUNTRY_PHONE_EXAMPLE_LOCAL = {
 };
 
 export default function Sidebar(props) {
+  const todayDate = new Date();
+  
   const {
-    calendarDate,
-    setCalendarDate,
-    selectedDate,
-    setSelectedDate,
+    calendarDate = todayDate,
+    setCalendarDate = () => {},
+    selectedDate = todayDate,
+    setSelectedDate = () => {},
     userName,
     userEmail,
+    userRole,
     loadingUser,
     userError,
+    selectedServices = [],
   } = props;
 
-  const todayDate = new Date();
   const navigate = useNavigate();
   const loc = useLocation();
 
   const [branchesOpen, setBranchesOpen] = React.useState(false);
+  const branchToggleRef = React.useRef(null);
+  const [branchMenuPos, setBranchMenuPos] = React.useState({ left: 10, top: 64 });
   const [branches, setBranches] = React.useState([]);
   const [networks, setNetworks] = React.useState([]);
   const [networkDialogOpen, setNetworkDialogOpen] = React.useState(false);
@@ -239,6 +329,49 @@ export default function Sidebar(props) {
   const [branchWebsite, setBranchWebsite] = React.useState('');
   const [branchSchedule, setBranchSchedule] = React.useState('');
     const [branchCountry, setBranchCountry] = React.useState('KZ');
+  const [branchTimezone, setBranchTimezone] = React.useState('Asia/Almaty');
+  const [branchLicenseType, setBranchLicenseType] = React.useState('free_trial'); // По умолчанию бесплатный период
+  const [branchCategory, setBranchCategory] = React.useState(''); // Категория филиала
+  const [categoryDialogOpen, setCategoryDialogOpen] = React.useState(false); // Диалог выбора категории
+  const [planCategories, setPlanCategories] = React.useState([]); // Категории из БД
+  const [datesWithAppointments, setDatesWithAppointments] = React.useState(new Map());
+  const [appointmentUpdateTrigger, setAppointmentUpdateTrigger] = React.useState(0);
+  const [weekRules, setWeekRules] = React.useState([]);
+  const [holidays, setHolidays] = React.useState([]);
+
+  // Форматирует локальную дату в строку YYYY-MM-DD
+  const formatLocalDate = (date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Получает тип дня для даты
+  const getDayType = React.useCallback((dateStr) => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    const dayOfWeek = date.getDay();
+    
+    // Проверяем праздники
+    const event = holidays.find(h => {
+      const [sy, sm, sd] = h.start_date.split('-').map(Number);
+      const [ey, em, ed] = h.end_date.split('-').map(Number);
+      const current = new Date(y, m - 1, d);
+      const start = new Date(sy, sm - 1, sd);
+      const end = new Date(ey, em - 1, ed);
+      return current >= start && current <= end;
+    });
+    
+    if (event) return event.day_type;
+    
+    // Используем правила недели
+    const weekRule = weekRules.find(r => r.weekday === dayOfWeek);
+    if (weekRule) return weekRule.day_type;
+    
+    // По умолчанию
+    return (dayOfWeek === 0 || dayOfWeek === 6) ? 'weekend' : 'weekday';
+  }, [weekRules, holidays]);
 
   // load branches for the currently-logged-in user (best-effort)
   React.useEffect(() => {
@@ -275,6 +408,20 @@ export default function Sidebar(props) {
           // data may be { branches: [...] } or an array
           // Some APIs return { rows: [...] }, or { branches: [...] }, or the array directly
           const list = Array.isArray(data) ? data : (data.branches || data.rows || data);
+          
+          // Кешируем timezone для каждого филиала
+          if (list && list.length > 0) {
+            list.forEach(branch => {
+              const branchId = branch.branch_id || branch.id;
+              const timezone = branch.timezone;
+              if (branchId && timezone) {
+                try {
+                  localStorage.setItem(`branch_${branchId}_timezone`, timezone);
+                } catch {}
+              }
+            });
+          }
+          
           if (mounted) setBranches(list || []);
           break;
         } catch (err) {
@@ -299,8 +446,26 @@ export default function Sidebar(props) {
       }
     }
 
+    async function loadPlanCategories() {
+      try {
+        const API_URL = process.env.REACT_APP_API_URL;
+        const res = await fetch(`${API_URL}/api/plans/categories`);
+        if (!res.ok) return;
+        const data = await res.json();
+        if (mounted) setPlanCategories(data.categories || []);
+      } catch (err) {
+        // Если не удалось загрузить - используем дефолтные категории
+        if (mounted) setPlanCategories([
+          { category_id: 1, name: 'VR', description: 'Виртуальная реальность, игровые зоны', icon: '🎮' },
+          { category_id: 2, name: 'Бильярд', description: 'Бильярдные клубы и столы', icon: '🎱' },
+          { category_id: 3, name: 'Техосмотр', description: 'Станции технического осмотра', icon: '🔧' }
+        ]);
+      }
+    }
+
     loadBranches();
     loadNetworks();
+    loadPlanCategories();
     return () => { mounted = false; };
   }, []);
 
@@ -322,6 +487,139 @@ export default function Sidebar(props) {
     if (branchesOpen) document.addEventListener('click', onDocClick);
     return () => document.removeEventListener('click', onDocClick);
   }, [branchesOpen]);
+
+  // Слушатель события для обновления точек при добавлении/изменении записей
+  React.useEffect(() => {
+    const handleAppointmentUpdate = () => {
+      setAppointmentUpdateTrigger(prev => prev + 1);
+    };
+
+    window.addEventListener('appointmentUpdated', handleAppointmentUpdate);
+    return () => window.removeEventListener('appointmentUpdated', handleAppointmentUpdate);
+  }, []);
+
+  // Загрузка дат с записями для текущего месяца
+  React.useEffect(() => {
+    let mounted = true;
+
+    async function loadAppointmentDates() {
+      const currentBranch = localStorage.getItem('selectedBranchId');
+      if (!currentBranch) return;
+
+      const API_URL = process.env.REACT_APP_API_URL;
+      const token = localStorage.getItem('token');
+      
+      // Формируем диапазон дат для текущего месяца календаря
+      const year = calendarDate.getFullYear();
+      const month = calendarDate.getMonth();
+      const firstDay = new Date(year, month, 1);
+      const lastDay = new Date(year, month + 1, 0);
+      
+      // Добавляем несколько дней до и после для отображения соседних месяцев
+      const startDate = new Date(firstDay);
+      startDate.setDate(startDate.getDate() - 7);
+      const endDate = new Date(lastDay);
+      endDate.setDate(endDate.getDate() + 7);
+
+      // Форматируем даты в локальном времени (без конвертации в UTC)
+      const formatLocalDate = (date) => {
+        const y = date.getFullYear();
+        const m = String(date.getMonth() + 1).padStart(2, '0');
+        const d = String(date.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      };
+
+      try {
+        let url = `${API_URL}/appointments?branchId=${currentBranch}&startDate=${formatLocalDate(startDate)}&endDate=${formatLocalDate(endDate)}`;
+        
+        // Add service_ids filter if any services are selected
+        if (selectedServices && selectedServices.length > 0) {
+          const serviceParams = selectedServices.map(id => `service_ids[]=${encodeURIComponent(id)}`).join('&');
+          url += `&${serviceParams}`;
+          // console.log('Sidebar: Fetching appointment dates with service filter:', { selectedServices, url });
+        } else {
+          // console.log('Sidebar: Fetching all appointment dates (no filter)');
+        }
+        
+        const res = await fetch(
+          url,
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          }
+        );
+
+        if (!mounted) return;
+        if (!res.ok) return;
+
+        const data = await res.json();
+        const dates = data.dates || [];
+        
+        // console.log('Загружено дат с записями:', dates.length);
+        // console.log('Пример данных с бэкенда:', dates.slice(0, 3));
+        
+        // Создаем Map с информацией о каждой дате
+        const dateMap = new Map();
+        dates.forEach(dateInfo => {
+          if (dateInfo.date) {
+            // date уже в формате YYYY-MM-DD из PostgreSQL TO_CHAR()
+            const dateStr = typeof dateInfo.date === 'string' ? dateInfo.date.split('T')[0] : dateInfo.date;
+            // console.log('Обработка даты:', dateInfo.date, '→', dateStr);
+            dateMap.set(dateStr, {
+              count: parseInt(dateInfo.count) || 0,
+              hasPackage: dateInfo.has_package || false
+            });
+          }
+        });
+        
+        // console.log('Информация о датах:', Array.from(dateMap.entries()));
+        setDatesWithAppointments(dateMap);
+      } catch (err) {
+        console.error('Ошибка загрузки дат с записями:', err);
+      }
+    }
+
+    loadAppointmentDates();
+
+    return () => {
+      mounted = false;
+    };
+  }, [calendarDate, appointmentUpdateTrigger, selectedServices]);
+
+  // Загружаем календарные данные (правила недели и праздники)
+  React.useEffect(() => {
+    let mounted = true;
+    async function loadCalendarData() {
+      const currentBranch = localStorage.getItem('selectedBranchId');
+      if (!currentBranch) return;
+
+      const API_URL = process.env.REACT_APP_API_URL;
+      const token = localStorage.getItem('token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/calendar/${currentBranch}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!mounted) return;
+        if (!res.ok) return;
+
+        const data = await res.json();
+        setWeekRules(data.weekRules || []);
+        setHolidays(data.holidays || []);
+      } catch (err) {
+        console.error('Ошибка загрузки календаря:', err);
+      }
+    }
+
+    loadCalendarData();
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   // Build calendar matrix (same logic as before) — returns an array of Date objects
   function buildCalendarMatrix(baseDate) {
@@ -353,6 +651,14 @@ export default function Sidebar(props) {
 
   // track selected branch id in component state (don't use localStorage)
   const [selectedBranchId, setSelectedBranchId] = React.useState(null);
+  
+  // Обновляем точки при смене филиала
+  React.useEffect(() => {
+    if (selectedBranchId) {
+      setAppointmentUpdateTrigger(prev => prev + 1);
+    }
+  }, [selectedBranchId]);
+  
   // sync selectedBranchId from the URL query param if present
   // fall back to previously-saved selection in localStorage
   React.useEffect(() => {
@@ -376,6 +682,24 @@ export default function Sidebar(props) {
   // если нет — переключаемся на первый доступный и поправляем URL/LocalStorage
   React.useEffect(() => {
     if (!branches || branches.length === 0) return;
+
+    // Admin bypass: allow access to any branch without validation
+    try {
+      const stored = JSON.parse(localStorage.getItem('user'));
+      const userRole = stored?.role || 'user';
+      if (userRole === 'admin') {
+        // Admin can access any branch - skip validation and navigation
+        const params = new URLSearchParams(loc.search || '');
+        const paramBid = params.get('branchId');
+        if (paramBid) {
+          if (String(selectedBranchId || '') !== String(paramBid)) {
+            setSelectedBranchId(paramBid);
+            try { localStorage.setItem('selectedBranchId', String(paramBid)); } catch {}
+          }
+        }
+        return;
+      }
+    } catch {}
 
     const all = branches;
 
@@ -443,10 +767,28 @@ export default function Sidebar(props) {
 
   const currentBranchName = currentBranch?.branch_name || currentBranch?.branchName || 'Нет Филиалов';
 
+  React.useEffect(() => {
+    if (!branchesOpen) return;
+    function updatePos() {
+      const btn = branchToggleRef.current;
+      if (!btn) return setBranchMenuPos({ left: 10, top: 64 });
+      const r = btn.getBoundingClientRect();
+      setBranchMenuPos({ left: Math.max(8, r.left + window.scrollX), top: r.bottom + window.scrollY + 6 });
+    }
+    updatePos();
+    window.addEventListener('resize', updatePos);
+    window.addEventListener('scroll', updatePos, true);
+    return () => {
+      window.removeEventListener('resize', updatePos);
+      window.removeEventListener('scroll', updatePos, true);
+    };
+  }, [branchesOpen]);
+
   return (
     <aside className="sidebar">
       <div className="logo-branch">
         <button
+          ref={branchToggleRef}
           className="branch-toggle"
           onClick={() => setBranchesOpen(open => !open)}
           aria-haspopup="true"
@@ -458,14 +800,35 @@ export default function Sidebar(props) {
         </button>
 
         {branchesOpen && (
-          <div className="branch-menu">
+          <div
+            className="branch-menu"
+            style={{
+              position: 'fixed',
+              left: `${branchMenuPos.left}px`,
+              top: `${branchMenuPos.top}px`,
+              background: '#fff',
+              color: '#111',
+              border: '1px solid rgba(0,0,0,0.06)',
+              zIndex: 9999,
+            }}
+          >
             <div className="branch-menu-section">
-              <div className="branch-menu-header">
-                <strong className="branch-menu-title">Сети</strong>
+                <div className="branch-menu-header">
+                <strong className="branch-menu-title" style={{ color: '#111' }}>Сети</strong>
                 <button
                   type="button"
                   className="link-add"
+                  style={{ color: 'var(--theme-primary, #2b6cb0)', background: '#fff', border: 'none' }}
                   onClick={() => {
+                    // Проверка для user и vip-user: максимум 1 сеть
+                    if ((userRole === 'user' || userRole === 'vip-user') && networks.length >= 1) {
+                      toast({ 
+                        title: 'Ограничение', 
+                        description: 'Вы можете создать только одну сеть', 
+                        variant: 'destructive' 
+                      });
+                      return;
+                    }
                     setNetworkDialogOpen(true);
                   }}
                 >
@@ -488,19 +851,20 @@ export default function Sidebar(props) {
                       if (!list.length) {
                         return (
                           <div key={net.network_id} className="network-group">
-                            <div className="network-name">{net.name}</div>
-                            <div className="branch-small">Здесь пока нет филиалов</div>
+                            <div className="network-name" style={{ color: '#111' }}>{net.name}</div>
+                            <div className="branch-small" style={{ color: 'var(--theme-subtext, #666)' }}>Здесь пока нет филиалов</div>
                           </div>
                         );
                       }
 
                       return (
                         <div key={net.network_id} className="network-group">
-                          <div className="network-name">{net.name}</div>
+                          <div className="network-name" style={{ color: 'var(--theme-text, #111)' }}>{net.name}</div>
                           {list.map((b) => (
                             <button
                               key={b.branch_id || b.id}
                               className="branch-item"
+                              style={{ background: '#fff', color: '#111', border: 'none' }}
                               onClick={() => {
                                 const bidValue = b.branch_id || b.id || b.branchId || null;
                                 try { setSelectedBranchId(bidValue); } catch {}
@@ -518,9 +882,16 @@ export default function Sidebar(props) {
                                 if (uid) navigate(`/timetable/${uid}?branchId=${encodeURIComponent(bid)}`);
                                 else navigate(`/timetable?branchId=${encodeURIComponent(bid)}`);
                               }}
-                            >
-                              <div className="branch-name">{b.branch_name}</div>
-                              <div className="branch-small">{b.city || b.company_name || ''}</div>
+                              >
+                              <div className="branch-name" style={{ color: '#111' }}>
+                                {b.branch_name}
+                              </div>
+                              <div className="branch-small" style={{ color: '#666' }}>{b.city || b.company_name || ''}</div>
+                              {(userRole === 'user' || userRole === 'vip-user') && b.valid_until && (
+                                <div style={{ marginLeft: 'auto', fontSize: '0.85em', color: '#666', paddingLeft: '8px' }}>
+                                  до {new Date(b.valid_until).toLocaleDateString('ru-RU')}
+                                </div>
+                              )}
                             </button>
                           ))}
                         </div>
@@ -538,11 +909,12 @@ export default function Sidebar(props) {
                         {networkBlocks}
                         {orphanBranches.length > 0 && (
                           <div className="network-group" key="no-network">
-                            <div className="network-name">Без сети</div>
+                            <div className="network-name" style={{ color: '#111' }}>Без сети</div>
                             {orphanBranches.map((b) => (
                               <button
                                 key={b.branch_id || b.id}
                                 className="branch-item"
+                                style={{ background: '#fff', color: '#111', border: 'none' }}
                                 onClick={() => {
                                   const bidValue = b.branch_id || b.id || b.branchId || null;
                                   try { setSelectedBranchId(bidValue); } catch {}
@@ -560,9 +932,16 @@ export default function Sidebar(props) {
                                   if (uid) navigate(`/timetable/${uid}?branchId=${encodeURIComponent(bid)}`);
                                   else navigate(`/timetable?branchId=${encodeURIComponent(bid)}`);
                                 }}
-                              >
-                                <div className="branch-name">{b.branch_name}</div>
-                                <div className="branch-small">{b.city || b.company_name || ''}</div>
+                                >
+                                <div className="branch-name" style={{ color: '#111' }}>
+                                  {b.branch_name}
+                                </div>
+                                <div className="branch-small" style={{ color: '#666' }}>{b.city || b.company_name || ''}</div>
+                                {(userRole === 'user' || userRole === 'vip-user') && b.valid_until && (
+                                  <div style={{ marginLeft: 'auto', fontSize: '0.85em', color: '#666', paddingLeft: '8px' }}>
+                                    до {new Date(b.valid_until).toLocaleDateString('ru-RU')}
+                                  </div>
+                                )}
                               </button>
                             ))}
                           </div>
@@ -586,11 +965,12 @@ export default function Sidebar(props) {
 
                     return (
                       <div key={nid} className="network-group">
-                        <div className="network-name">{networkLabel}</div>
+                        <div className="network-name" style={{ color: 'var(--theme-text, #111)' }}>{networkLabel}</div>
                         {list.map((b) => (
-                          <button
-                            key={b.branch_id || b.id}
-                            className="branch-item"
+                            <button
+                              key={b.branch_id || b.id}
+                              className="branch-item"
+                              style={{ background: '#fff', color: '#111', border: 'none' }}
                             onClick={() => {
                               const bidValue = b.branch_id || b.id || b.branchId || null;
                               try { setSelectedBranchId(bidValue); } catch {}
@@ -609,8 +989,15 @@ export default function Sidebar(props) {
                               else navigate(`/timetable?branchId=${encodeURIComponent(bid)}`);
                             }}
                           >
-                            <div className="branch-name">{b.branch_name}</div>
-                            <div className="branch-small">{b.city || b.company_name || ''}</div>
+                            <div className="branch-name" style={{ color: '#111' }}>
+                              {b.branch_name}
+                            </div>
+                            <div className="branch-small" style={{ color: '#666' }}>{b.city || b.company_name || ''}</div>
+                            {(userRole === 'user' || userRole === 'vip-user') && b.valid_until && (
+                              <div style={{ marginLeft: 'auto', fontSize: '0.85em', color: '#666', paddingLeft: '8px' }}>
+                                до {new Date(b.valid_until).toLocaleDateString('ru-RU')}
+                              </div>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -621,21 +1008,23 @@ export default function Sidebar(props) {
                 <button
                   className="branch-add-line"
                   type="button"
+                  style={{ color: 'var(--theme-primary, #2b6cb0)', background: '#fff', border: 'none' }}
                   onClick={() => {
                     if (!networks || networks.length === 0) {
-                      alert('Сначала создайте сеть');
+                      toast({ title: 'Ошибка', description: 'Сначала создайте сеть', variant: 'destructive' });
                       return;
                     }
-                    // по умолчанию создаём филиал "Без сети"
-                    setBranchNetworkId('');
-                    setBranchCountry('KZ');
-                    setBranchName('');
-                    setBranchCity('');
-                    setBranchAddress('');
-                    setBranchPhone('');
-                    setBranchWebsite('');
-                    setBranchSchedule('');
-                    setBranchDialogOpen(true);
+                    // Проверка для user и vip-user: максимум 3 филиала
+                    if ((userRole === 'user' || userRole === 'vip-user') && branches.length >= 3) {
+                      toast({ 
+                        title: 'Ограничение', 
+                        description: 'Вы можете создать максимум 3 филиала', 
+                        variant: 'destructive' 
+                      });
+                      return;
+                    }
+                    // Открываем диалог выбора категории
+                    setCategoryDialogOpen(true);
                   }}
                 >
                   + Добавить филиал
@@ -685,15 +1074,28 @@ export default function Sidebar(props) {
           <table className="ui-datepicker-calendar">
             <thead>
               <tr>
-                {['пн','вт','ср','чт','пт','сб','вс'].map((wd) => (
-                  <th key={wd}><span title={wd}>{wd}</span></th>
-                ))}
+                {['пн','вт','ср','чт','пт','сб','вс'].map((wd, idx) => {
+                  // idx: 0=пн, 1=вт, 2=ср, 3=чт, 4=пт, 5=сб, 6=вс
+                  // weekday: 1=пн, 2=вт, ..., 6=сб, 0=вс
+                  const weekdayNum = idx === 6 ? 0 : idx + 1;
+                  const rule = weekRules.find(r => r.weekday === weekdayNum);
+                  const dayType = rule ? rule.day_type : (weekdayNum === 0 || weekdayNum === 6 ? 'weekend' : 'weekday');
+                  const thClass = dayType === 'weekend' ? 'weekday-weekend' : dayType === 'holiday' ? 'weekday-holiday' : '';
+                  
+                  return (
+                    <th key={wd} className={thClass}><span title={wd}>{wd}</span></th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody>
               {(() => {
                 const rows = [];
                 for (let r = 0; r < calendarMatrix.length; r += 7) rows.push(calendarMatrix.slice(r, r + 7));
+
+                // Проверка лицензии для user/vip-user
+                const isRestrictedRole = userRole === 'user' || userRole === 'vip-user';
+                const branchValidUntil = currentBranch?.valid_until;
 
                 return rows.map((week, rIdx) => (
                   <tr key={rIdx} className={"work"}>
@@ -709,8 +1111,37 @@ export default function Sidebar(props) {
 
                       const isWeekend = cIdx === 5 || cIdx === 6;
 
-                      const tdClasses = [isOtherMonth ? 'ui-datepicker-other-month' : '', isToday ? 'ui-datepicker-current-day ui-datepicker-today' : '', isWeekend ? 'ui-datepicker-week-end' : '', isSelected ? 'ui-datepicker-current-day ui-datepicker-selected' : ''].filter(Boolean).join(' ');
-                      const aClasses = ['ui-state-default', isOtherMonth ? 'ui-priority-secondary' : '', isToday ? 'ui-state-highlight ui-state-active ui-state-hover' : ''].filter(Boolean).join(' ');
+                      // Проверяем, есть ли запись в этот день и определяем цвет
+                      const cellDateStr = `${cell.getFullYear()}-${String(cell.getMonth() + 1).padStart(2, '0')}-${String(cell.getDate()).padStart(2, '0')}`;
+                      const dateInfo = datesWithAppointments.get(cellDateStr);
+                      const hasAppointment = dateInfo !== undefined;
+                      
+                      // Определяем тип дня (будни, выходные, праздник)
+                      const dayType = getDayType(cellDateStr);
+                      
+                      // Проверяем доступ к дате для user/vip-user
+                      const isDateBlocked = isRestrictedRole && branchValidUntil && cellDateStr > branchValidUntil;
+                      
+                      // Отладка: логируем первые несколько дат
+                      // if (rIdx === 0 && cIdx < 7) {
+                      //   console.log(`Ячейка [${rIdx},${cIdx}]:`, cell.toLocaleDateString(), '→', cellDateStr, 'has:', hasAppointment, dateInfo);
+                      // }
+                      
+                      // Определяем цвет точки:
+                      // Желтый - если есть пакеты (приоритет)
+                      // Оранжевый - если записей больше 10
+                      // Зеленый - если записей до 10
+                      let indicatorColor = 'green';
+                      if (hasAppointment) {
+                        if (dateInfo.hasPackage) {
+                          indicatorColor = 'yellow';
+                        } else if (dateInfo.count > 10) {
+                          indicatorColor = 'orange';
+                        }
+                      }
+
+                      const tdClasses = [isOtherMonth ? 'ui-datepicker-other-month' : '', isToday ? 'ui-datepicker-current-day ui-datepicker-today' : '', isWeekend ? 'ui-datepicker-week-end' : '', isSelected ? 'ui-datepicker-current-day ui-datepicker-selected' : '', isDateBlocked ? 'date-blocked' : ''].filter(Boolean).join(' ');
+                      const aClasses = ['ui-state-default', isOtherMonth ? 'ui-priority-secondary' : '', isToday ? 'ui-state-highlight ui-state-active ui-state-hover' : '', dayType === 'holiday' ? 'day-is-holiday' : '', isDateBlocked ? 'date-disabled' : ''].filter(Boolean).join(' ');
 
                       return (
                         <td key={cIdx} className={tdClasses} data-month={cell.getMonth()} data-year={cell.getFullYear()}>
@@ -760,6 +1191,7 @@ export default function Sidebar(props) {
                             }}
                           >
                             {cell.getDate()}
+                            {hasAppointment && ((networks && networks.length > 0) || (branches && branches.length > 0)) && <span className={`appointment-indicator appointment-indicator-${indicatorColor}`}></span>}
                           </button>
                         </td>
                       );
@@ -775,11 +1207,19 @@ export default function Sidebar(props) {
       <div className="menu">
         {(() => {
           const items = [
+            // { to: '/analytics', label: 'Аналитика', icon: analyticsIcon },
+            { to: '/analytics', label: 'Аналитика', icon: analyticsIcon2 },
             { to: '/clients', label: 'Клиентская база', icon: clientIcon },
             { to: '/dashboard', label: 'Сводка', icon: summaryIcon },
             { to: '/onlinebooking', label: 'Онлайн-запись', icon: bookingIcon },
             { to: '/settings', label: 'Настройки', icon: settingsIcon },
+            { to: '/license', label: 'Лицензия', icon: licenseIcon },
           ];
+
+          // Добавить пункт "Управление" для admin и manager
+          if (userRole === 'admin' || userRole === 'manager') {
+            items.splice(4, 0, { to: '/management', label: 'Управление', icon: managementIcon });
+          }
 
           return items.map(it => {
             // append branchId query param to menu links when a branch is selected
@@ -828,6 +1268,139 @@ export default function Sidebar(props) {
           Выйти из аккаунта
         </button>
       </div>
+
+      {/* Диалог выбора категории филиала */}
+      {categoryDialogOpen && (
+        <div className="network-dialog-backdrop" onClick={() => setCategoryDialogOpen(false)}>
+          <div
+            className="network-dialog"
+            onClick={(e) => e.stopPropagation()}
+            style={{ 
+              maxWidth: '700px', 
+              borderRadius: '16px',
+              padding: '0',
+              overflow: 'hidden',
+              boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+            }}
+          >
+            <div className="network-dialog-header" style={{
+              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              color: '#fff',
+              padding: '24px 32px',
+              borderBottom: 'none'
+            }}>
+              <h2 className="network-dialog-title" style={{ 
+                color: '#fff', 
+                fontSize: '24px',
+                fontWeight: '600',
+                margin: 0
+              }}>Выберите тип филиала</h2>
+              <button
+                className="network-dialog-close"
+                onClick={() => setCategoryDialogOpen(false)}
+                aria-label="Закрыть"
+                style={{
+                  color: '#fff',
+                  opacity: 0.9,
+                  fontSize: '28px',
+                  background: 'transparent',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: '0',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}
+              >
+                ✕
+              </button>
+            </div>
+            <div className="network-dialog-body" style={{ padding: '32px' }}>
+              <p style={{ 
+                marginBottom: '24px', 
+                color: '#64748b',
+                fontSize: '15px',
+                lineHeight: '1.6',
+                textAlign: 'center'
+              }}>
+                Выберите категорию для вашего филиала. Цены на услуги различаются в зависимости от типа заведения.
+              </p>
+              <div style={{ display: 'grid', gap: '16px' }}>
+                {planCategories.map((category, idx) => {
+                  // Градиенты для разных категорий
+                  const gradients = [
+                    { bg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', shadow: 'rgba(102, 126, 234, 0.4)', shadowHover: 'rgba(102, 126, 234, 0.5)' },
+                    { bg: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', shadow: 'rgba(240, 147, 251, 0.4)', shadowHover: 'rgba(240, 147, 251, 0.5)' },
+                    { bg: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', shadow: 'rgba(79, 172, 254, 0.4)', shadowHover: 'rgba(79, 172, 254, 0.5)' },
+                    { bg: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', shadow: 'rgba(250, 112, 154, 0.4)', shadowHover: 'rgba(250, 112, 154, 0.5)' },
+                    { bg: 'linear-gradient(135deg, #30cfd0 0%, #330867 100%)', shadow: 'rgba(48, 207, 208, 0.4)', shadowHover: 'rgba(48, 207, 208, 0.5)' },
+                  ];
+                  const gradient = gradients[idx % gradients.length];
+                  
+                  return (
+                    <button
+                      key={category.category_id}
+                      style={{ 
+                        padding: '20px 24px',
+                        fontSize: '16px',
+                        textAlign: 'left',
+                        background: gradient.bg,
+                        border: 'none',
+                        borderRadius: '12px',
+                        color: '#fff',
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        boxShadow: `0 4px 15px ${gradient.shadow}`,
+                        position: 'relative',
+                        overflow: 'hidden'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.transform = 'translateY(-2px)';
+                        e.currentTarget.style.boxShadow = `0 6px 20px ${gradient.shadowHover}`;
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.transform = 'translateY(0)';
+                        e.currentTarget.style.boxShadow = `0 4px 15px ${gradient.shadow}`;
+                      }}
+                      onClick={() => {
+                        setBranchCategory(category.name);
+                        setCategoryDialogOpen(false);
+                        setBranchNetworkId('');
+                        setBranchCountry('KZ');
+                        setBranchName('');
+                        setBranchCity('');
+                        setBranchAddress('');
+                        setBranchPhone('');
+                        setBranchWebsite('');
+                        setBranchSchedule('');
+                        setBranchTimezone('Asia/Almaty');
+                        setBranchLicenseType('free_trial');
+                        setBranchDialogOpen(true);
+                      }}
+                    >
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div style={{ 
+                          fontSize: '48px', 
+                          lineHeight: 1,
+                          filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.1))'
+                        }}>{category.icon || '📦'}</div>
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '20px', fontWeight: '600', marginBottom: '4px' }}>{category.name}</div>
+                          <div style={{ fontSize: '14px', opacity: 0.9, lineHeight: '1.4' }}>
+                            {category.description || ''}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {networkDialogOpen && (
         <div className="network-dialog-backdrop" onClick={() => setNetworkDialogOpen(false)}>
@@ -882,11 +1455,11 @@ export default function Sidebar(props) {
                 onClick={async () => {
                   const token = localStorage.getItem('token');
                   if (!token) {
-                    alert('Нет токена авторизации');
+                    toast({ title: 'Ошибка', description: 'Нет токена авторизации', variant: 'destructive' });
                     return;
                   }
                   if (!networkName) {
-                    alert('Введите название сети');
+                    toast({ title: 'Ошибка', description: 'Введите название сети', variant: 'destructive' });
                     return;
                   }
                   const baseSlug = networkName
@@ -912,7 +1485,7 @@ export default function Sidebar(props) {
                     });
                     const data = await res.json();
                     if (!res.ok) {
-                      alert(data.error || 'Не удалось создать сеть');
+                      toast({ title: 'Ошибка', description: data.error || 'Не удалось создать сеть', variant: 'destructive' });
                       return;
                     }
                     // добавить новую сеть в конец списка, чтобы она была снизу
@@ -927,7 +1500,7 @@ export default function Sidebar(props) {
                     setNetworkName('');
                     setNetworkDescription('');
                   } catch (e) {
-                    alert('Ошибка запроса');
+                    toast({ title: 'Ошибка', description: 'Ошибка запроса', variant: 'destructive' });
                   }
                 }}
               >
@@ -944,7 +1517,7 @@ export default function Sidebar(props) {
             className="network-dialog"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="network-dialog-header">
+            <div className="network-dialog-header create-branch">
               <h2 className="network-dialog-title">Создать филиал</h2>
               <button
                 type="button"
@@ -1092,6 +1665,31 @@ export default function Sidebar(props) {
                 />
               </label>
               <label className="network-field-label">
+                Часовой пояс
+                <select
+                  className="network-field-input"
+                  value={branchTimezone}
+                  onChange={(e) => setBranchTimezone(e.target.value)}
+                >
+                  {TIMEZONES.map(tz => (
+                    <option key={tz.value} value={tz.value}>{tz.label}</option>
+                  ))}
+                </select>
+              </label>
+              {(userRole === 'user' || userRole === 'vip-user') && (
+                <label className="network-field-label">
+                  Тип лицензии
+                  <select
+                    className="network-field-input"
+                    value={branchLicenseType}
+                    onChange={(e) => setBranchLicenseType(e.target.value)}
+                  >
+                    <option value="free_trial">Бесплатный период на 1 неделю</option>
+                    <option value="paid" disabled>Платный режим</option>
+                  </select>
+                </label>
+              )}
+              <label className="network-field-label">
                 Режим работы
                 <input
                   type="text"
@@ -1183,11 +1781,11 @@ export default function Sidebar(props) {
                 onClick={async () => {
                   const token = localStorage.getItem('token');
                   if (!token) {
-                    alert('Нет токена авторизации');
+                    toast({ title: 'Ошибка', description: 'Нет токена авторизации', variant: 'destructive' });
                     return;
                   }
                   if (!branchName) {
-                    alert('Введите название филиала');
+                    toast({ title: 'Ошибка', description: 'Введите название филиала', variant: 'destructive' });
                     return;
                   }
                   try {
@@ -1201,6 +1799,7 @@ export default function Sidebar(props) {
                       body: JSON.stringify({
                         network_id: branchNetworkId ? Number(branchNetworkId) : null,
                         branch_name: branchName,
+                        category: branchCategory, // Категория филиала: VR, Бильярд, Техосмотр
                         country_code: branchCountry || 'KZ',
                         city: branchCity,
                         address: branchAddress,
@@ -1208,11 +1807,13 @@ export default function Sidebar(props) {
                         phone: branchPhone ? branchPhone.replace(/\s+/g, '') : '',
                         website: branchWebsite,
                         schedule: branchSchedule,
+                        timezone: branchTimezone || 'Asia/Almaty',
+                        license_type: branchLicenseType, // Тип лицензии для user/vip-user
                       }),
                     });
                     const data = await res.json();
                     if (!res.ok) {
-                      alert(data.error || 'Не удалось создать филиал');
+                      toast({ title: 'Ошибка', description: data.error || 'Не удалось создать филиал', variant: 'destructive' });
                       return;
                     }
                     if (data && data.branch) {
@@ -1231,7 +1832,7 @@ export default function Sidebar(props) {
                     // Полная перезагрузка, чтобы все страницы/состояния подтянули новый филиал
                     window.location.reload();
                   } catch (e) {
-                    alert('Ошибка запроса');
+                    toast({ title: 'Ошибка', description: 'Ошибка запроса', variant: 'destructive' });
                   }
                 }}
               >

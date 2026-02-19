@@ -2,7 +2,7 @@
 .settings-content {
   flex: 1;
   padding: 20px;
-  background: #f5f6f8;
+  background: var(--theme-page-background, #f5f6f8);
   display: flex;
   flex-direction: column;
 }
@@ -18,6 +18,7 @@
   margin: 0;
   font-size: 22px;
   font-weight: 700;
+  color: var(--theme-text, #111);
 }
 
 .settings-burger {
@@ -27,9 +28,10 @@
   align-items: center;
   justify-content: center;
   border-radius: 8px;
-  background: white;
-  border: 1px solid #e6edf3;
+  background:var(--theme-card-bg, white);
+  border:1px solid var(--theme-border, #e6edf3);
   box-shadow: 0 2px 6px rgba(16,24,40,0.04);
+  color: var(--theme-text, #111);
 }
 
 .settings-grid {
@@ -39,10 +41,10 @@
 }
 
 .settings-card {
-  background: white;
+  background: var(--theme-background, white);
   padding: 18px;
   border-radius: 10px;
-  border: 1px solid #eef3f7;
+  border: 1px solid var(--theme-secondary, #eef3f7);
   box-shadow: 0 6px 14px rgba(16,24,40,0.04);
 }
 
@@ -134,6 +136,50 @@
 .avatar-stack{display:flex;gap:6px}
 .avatar{width:36px;height:36px;border-radius:6px;background:#e6eef7}
 .avatar--dummy{box-shadow:inset 0 0 0 1px rgba(255,255,255,0.6)}
+
+/* Dark theme overrides for settings page */
+.settings-content.dark-theme {
+  background: #071021;
+  --theme-page-background: #071021;
+  --theme-text: #e6eef7;
+  --theme-card-bg: #0b1228;
+  --theme-border: rgba(255,255,255,0.06);
+  --theme-background: #071021;
+  --theme-secondary: rgba(255,255,255,0.04);
+}
+
+.settings-content.dark-theme .settings-header h1 {
+  color: var(--theme-text, #e6eef7);
+}
+
+.settings-content.dark-theme .settings-burger {
+  background: var(--theme-card-bg);
+  border: 1px solid var(--theme-border);
+  box-shadow: none;
+  color: var(--theme-text);
+}
+
+.settings-content.dark-theme .settings-card {
+  background: var(--theme-card-bg);
+  border: 1px solid var(--theme-secondary);
+  box-shadow: 0 6px 20px rgba(2,6,23,0.6);
+}
+
+.settings-content.dark-theme .settings-card-title {
+  color: var(--theme-text);
+}
+
+.settings-content.dark-theme .settings-card li {
+  color: #cbd5e1;
+}
+
+.settings-content.dark-theme .settings-card a {
+  color: #93c5fd;
+}
+
+.settings-content.dark-theme .settings-card a:hover {
+  color: #ffffff;
+}
 
 @media (max-width: 900px) {
   .settings-grid { grid-template-columns: 1fr; }

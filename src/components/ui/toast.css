@@ -1,0 +1,226 @@
+/* Toast Viewport - контейнер для всех toast */
+.toast-viewport {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 420px;
+  width: auto;
+  min-width: 300px;
+  pointer-events: none;
+}
+
+/* Toast Root - базовый стиль для toast */
+.toast-root {
+  background: var(--theme-background, #ffffff);
+  border: 1px solid var(--theme-border, #e5e7eb);
+  border-radius: 12px;
+  padding: 16px 48px 16px 20px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12), 0 2px 8px rgba(0, 0, 0, 0.08);
+  pointer-events: auto;
+  min-width: 300px;
+  max-width: 420px;
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+/* Анимации для toast */
+.toast-root[data-state="open"] {
+  animation: slideInFromRight 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.toast-root[data-state="closed"] {
+  animation: slideOutToRight 0.25s ease-in;
+}
+
+@keyframes slideInFromRight {
+  from {
+    transform: translateX(calc(100% + 16px));
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Toast animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes slideInFromBottom {
+  from {
+    transform: translateY(calc(100% + 1rem)) scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutToRight {
+  from {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(calc(100% + 1rem)) scale(0.95);
+    opacity: 0;
+  }
+}
+
+[data-state="open"] {
+  animation: slideInFromBottom 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-state="closed"] {
+  animation: slideOutToRight 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Toast Title */
+.toast-title {
+  font-weight: 600;
+  font-size: 15px;
+  color: var(--theme-text, #111827);
+  margin: 0 0 4px 0;
+  line-height: 1.4;
+}
+
+/* Toast Description */
+.toast-description {
+  font-size: 14px;
+  color: var(--theme-subtext, #6b7280);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* Toast Close Button */
+.toast-close {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  border-radius: 6px;
+  padding: 4px;
+  color: var(--theme-subtext, #6b7280);
+  opacity: 0;
+  transition: all 0.2s;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.toast-root:hover .toast-close {
+  opacity: 1;
+}
+
+.toast-close:hover {
+  color: var(--theme-text, #111827);
+  background: var(--theme-hover, rgba(0, 0, 0, 0.05));
+}
+
+.toast-close-icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* Toast Success Variant */
+.toast-success {
+  border-left: 4px solid #22c55e;
+  background: var(--theme-background, #f0fdf4);
+}
+
+.toast-success .toast-title {
+  color: #15803d;
+}
+
+.toast-success .toast-description {
+  color: #166534;
+}
+
+/* Toast Destructive/Error Variant */
+.toast-destructive {
+  border-left: 4px solid #ef4444;
+  background: var(--theme-background, #fef2f2);
+}
+
+.toast-destructive .toast-title {
+  color: #b91c1c;
+}
+
+.toast-destructive .toast-description {
+  color: #dc2626;
+}
+
+/* Toast Action Button */
+.toast-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-border, #e5e7eb);
+  background: transparent;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--theme-text, #111827);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.toast-action:hover {
+  background: var(--theme-hover, rgba(0, 0, 0, 0.05));
+}
+
+/* Grid layout для контента */
+.grid {
+  display: grid;
+}
+
+.gap-1 {
+  gap: 0.25rem;
+}
+
+/* Адаптивность для мобильных */
+@media (max-width: 640px) {
+  .toast-viewport {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+  }
+
+  .toast-root {
+    min-width: auto;
+    width: 100%;
+  }
+}
+

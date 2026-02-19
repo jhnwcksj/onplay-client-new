@@ -1,16 +1,32 @@
+/* CSS Variables for theming */
+:root {
+  --theme-background: #ffffff;
+  --theme-text: #333333;
+  --theme-primary: #4a90e2;
+  --theme-secondary: #f5f5f5;
+  --theme-page-background: #ffffff;
+  --theme-page-background-size: auto;
+  --theme-sidebar-bg: #111827;
+  --theme-card-bg: rgba(255, 255, 255, 0.9);
+  --theme-border: rgba(0, 0, 0, 0.1);
+  --theme-hover: rgba(0, 0, 0, 0.03);
+  --theme-input-bg: #ffffff;
+  --theme-input-border: #e5e7eb;
+  --theme-subtext: #6b7280;
+}
+
 body {
   margin: 0;
-<<<<<<< HEAD
   /* Prefer Inter as the primary UI font; fall back to system stacks if unavailable */
   font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI',
     'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-=======
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
->>>>>>> 8941728 (Initialize project using Create React App)
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background: var(--theme-page-background);
+  background-size: var(--theme-page-background-size, cover);
+  background-attachment: fixed;
+  color: var(--theme-text);
 }
 
 code {

@@ -1,0 +1,836 @@
+.management-wrapper {
+  display: flex;
+  height: 100vh;
+  background: #f5f5f5;
+}
+
+/* Dark theme variables applied to wrapper */
+.management-wrapper.dark-theme {
+  --theme-background: #1f2937;
+  --theme-text: #f9fafb;
+  --theme-primary: #60a5fa;
+  --theme-secondary: #374151;
+  --theme-card-bg: rgba(255,255,255,0.03);
+  --theme-border: rgba(255,255,255,0.06);
+  --theme-hover: rgba(255,255,255,0.04);
+  --theme-input-bg: rgba(255,255,255,0.04);
+  background: var(--theme-page-background, #1f2937) !important;
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+/* Ensure dialog headers stay black in dark theme */
+.management-wrapper.dark-theme .dialog h2 {
+  color: #000 !important;
+}
+
+/* branch-menu-section inside Sidebar (branch menu popover) should keep black text in Management dark theme */
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .network-name,
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .branch-item,
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .branch-name,
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .branch-small,
+.management-content.dark-theme .branch-menu .branch-menu-section .network-name,
+.management-content.dark-theme .branch-menu .branch-menu-section .branch-item,
+.management-content.dark-theme .branch-menu .branch-menu-section .branch-name,
+.management-content.dark-theme .branch-menu .branch-menu-section .branch-small {
+  color: #0d0d0d !important;
+}
+
+/* Also ensure the branch-menu header/title ("Сети") is black in Management dark theme */
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .branch-menu-title,
+.management-wrapper.dark-theme .branch-menu .branch-menu-section .branch-menu-header,
+.management-content.dark-theme .branch-menu .branch-menu-section .branch-menu-title,
+.management-content.dark-theme .branch-menu .branch-menu-section .branch-menu-header {
+  color: #0d0d0d !important;
+}
+
+/* Keep network-dialog title black when Management dark theme is active */
+.management-wrapper.dark-theme .network-dialog-title,
+.management-content.dark-theme .network-dialog-title {
+  color: #fff !important;
+}
+
+/* Make description inside network dialog black in Management context */
+.management-wrapper.dark-theme .network-dialog-body p,
+.management-content.dark-theme .network-dialog-body p {
+  color: #0d0d0d !important;
+}
+
+.management-content {
+  flex: 1;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.management-wrapper.dark-theme .management-content,
+.management-content.dark-theme {
+  background: var(--theme-background, #071021) !important;
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.management-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+}
+
+.management-header h1 {
+  font-size: 2rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Make main heading light in dark theme */
+.management-wrapper.dark-theme .management-header h1,
+.management-content.dark-theme .management-header h1,
+.dark-theme .management-header h1,
+body[data-theme="dark"] .management-header h1 {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.management-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.management-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 1.5rem;
+}
+
+/* Панель списка пользователей */
+.users-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark variants for panels and cards */
+.management-wrapper.dark-theme .users-panel,
+.management-wrapper.dark-theme .user-details-panel,
+.management-wrapper.dark-theme .network-card,
+.management-wrapper.dark-theme .branch-card,
+.management-wrapper.dark-theme .user-info,
+.management-content.dark-theme .users-panel,
+.management-content.dark-theme .user-details-panel,
+.management-content.dark-theme .network-card,
+.management-content.dark-theme .branch-card,
+.management-content.dark-theme .user-info,
+.dark-theme .users-panel,
+.dark-theme .user-details-panel,
+.dark-theme .network-card,
+.dark-theme .branch-card,
+.dark-theme .user-info {
+  background: var(--theme-card-bg, #0b1228) !important;
+  color: var(--theme-text, #f9fafb) !important;
+  border: 1px solid var(--theme-border, rgba(255,255,255,0.06)) !important;
+  box-shadow: none !important;
+}
+
+.users-panel h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.users-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.user-card {
+  padding: 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.management-wrapper.dark-theme .user-card,
+.management-content.dark-theme .user-card,
+.dark-theme .user-card {
+  border-color: var(--theme-border, rgba(255,255,255,0.06)) !important;
+  background: var(--theme-card-bg, #0b1228) !important;
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.user-card:hover {
+  border-color: #007bff;
+  background: #f8f9fa;
+}
+
+.user-card.active {
+  border-color: #007bff;
+  background: #e7f3ff;
+}
+
+.user-card-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+.management-wrapper.dark-theme .user-card-name,
+.management-content.dark-theme .user-card-name,
+.dark-theme .user-card-name {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.user-card-role {
+  font-size: 0.75rem;
+  color: #6c757d;
+  margin-bottom: 0.25rem;
+}
+
+.management-wrapper.dark-theme .user-card-role,
+.management-content.dark-theme .user-card-role,
+.dark-theme .user-card-role {
+  color: var(--theme-subtext, #9aa8b8) !important;
+}
+
+.user-card-email {
+  font-size: 0.85rem;
+  color: #495057;
+}
+
+.management-wrapper.dark-theme .user-card-email,
+.management-content.dark-theme .user-card-email,
+.dark-theme .user-card-email {
+  color: var(--theme-text, #e6eef7) !important;
+}
+
+.user-edit-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 1.2rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.user-edit-btn:hover {
+  background: #f0f0f0;
+  transform: scale(1.1);
+}
+
+.user-edit-btn:active {
+  transform: scale(0.95);
+}
+
+/* Панель деталей пользователя */
+.user-details-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.user-details-panel h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.management-wrapper.dark-theme .user-details-panel h2,
+.management-content.dark-theme .user-details-panel h2,
+.dark-theme .user-details-panel h2 {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.user-details-panel h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #1a1a1a;
+}
+
+.user-info {
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.user-info-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.user-info-row:last-child {
+  border-bottom: none;
+}
+
+.user-info-row .label {
+  font-weight: 600;
+  color: #6c757d;
+}
+
+.user-info-row .value {
+  color: #1a1a1a;
+}
+
+.management-wrapper.dark-theme .user-info-row .label,
+.management-content.dark-theme .user-info-row .label,
+.dark-theme .user-info-row .label {
+  color: var(--theme-subtext, #9aa8b8) !important;
+}
+
+.management-wrapper.dark-theme .user-info-row .value,
+.management-content.dark-theme .user-info-row .value,
+.dark-theme .user-info-row .value {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+/* Список сетей */
+.networks-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.network-card {
+  padding: 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+/* Стилизовать кнопку действия в заголовке секции: не растягивать, тень, адаптивность */
+.section-header h3 {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.section-header .btn {
+  width: auto;
+  min-width: 120px;
+  max-width: 260px;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  box-shadow: 0 6px 18px rgba(0, 123, 255, 0.15);
+}
+
+.section-header .btn.btn-primary {
+  background: #007bff;
+  color: #fff;
+  border-color: #007bff;
+}
+
+.section-header .btn.btn-primary:hover {
+  background: #0069d9;
+  box-shadow: 0 8px 22px rgba(0, 105, 217, 0.18);
+}
+
+@media (max-width: 720px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .section-header .btn {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* Радио-переключатели в одну строку внутри модального шага */
+.radio-row {
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 0.75rem;
+}
+
+.radio-row { /* ensure left alignment so options don't center */
+  display: flex;
+  gap: 1.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px; /* добавить пространство сверху */
+  margin-bottom: 0.75rem;
+  justify-content: flex-start;
+}
+
+.radio-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 0; /* убрать промежуток между радио и текстом */
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap; /* не переносить текст на новую строку */
+  font-size: 1.05rem; /* чуть больший шрифт */
+}
+
+.radio-option input[type="radio"] {
+  transform: scale(1);
+  margin: 0 6px 0 0; /* небольшой отступ справа от радио */
+  vertical-align: middle;
+}
+
+@media (max-width: 520px) {
+  .radio-row {
+    gap: 1rem;
+  }
+  .radio-option {
+    font-weight: 600;
+  }
+}
+.network-card:hover {
+  border-color: #28a745;
+  background: #f8f9fa;
+}
+
+.network-card.active {
+  border-color: #28a745;
+  background: #e8f5e9;
+}
+
+.network-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+  margin-bottom: 0.25rem;
+}
+
+/* network-name light in dark theme */
+.management-wrapper.dark-theme .network-name,
+.management-content.dark-theme .network-name,
+.dark-theme .network-name,
+body[data-theme="dark"] .network-name {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.network-description {
+  font-size: 0.85rem;
+  color: #6c757d;
+}
+
+/* Список филиалов */
+.branches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.branch-card {
+  padding: 0.75rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.branch-card:hover {
+  border-color: #17a2b8;
+  background: #f8f9fa;
+}
+
+.branch-card.active {
+  border-color: #17a2b8;
+  background: #e0f7fa;
+}
+
+.branch-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+/* branch header and branch name in dark theme */
+.management-wrapper.dark-theme .branch-header,
+.management-content.dark-theme .branch-header,
+.dark-theme .branch-header,
+body[data-theme="dark"] .branch-header {
+  background: transparent !important;
+}
+
+.management-wrapper.dark-theme .branch-name,
+.management-content.dark-theme .branch-name,
+.dark-theme .branch-name,
+body[data-theme="dark"] .branch-name {
+  color: var(--theme-text, #f9fafb) !important;
+}
+
+.branch-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #1a1a1a;
+}
+
+.branch-info {
+  font-size: 0.85rem;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+.branch-license {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e5e5e5;
+}
+
+.license-badge {
+  display: inline-block;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.license-badge.free_trial {
+  background: #e7f3ff;
+  color: #0066cc;
+}
+
+.license-badge.paid {
+  background: #e8f5e9;
+  color: #2e7d32;
+}
+
+/* Dark theme badges */
+.management-wrapper.dark-theme .license-badge.free_trial,
+.management-content.dark-theme .license-badge.free_trial,
+.dark-theme .license-badge.free_trial {
+  background: rgba(33,150,243,0.12) !important;
+  color: #9fd6ff !important;
+}
+
+.management-wrapper.dark-theme .license-badge.paid,
+.management-content.dark-theme .license-badge.paid,
+.dark-theme .license-badge.paid {
+  background: rgba(56,142,60,0.12) !important;
+  color: #8ee6a3 !important;
+}
+
+.license-date {
+  font-size: 0.75rem;
+  color: #6c757d;
+}
+
+/* Кнопки */
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid #e5e5e5;
+  border-radius: 6px;
+  background: white;
+  color: #1a1a1a;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.management-wrapper.dark-theme .btn,
+.management-content.dark-theme .btn,
+.dark-theme .btn {
+  background: transparent !important;
+  color: var(--theme-text, #f9fafb) !important;
+  border-color: var(--theme-border, rgba(255,255,255,0.06)) !important;
+}
+
+.btn:hover {
+  background: #f8f9fa;
+}
+
+.btn-primary {
+  background: #007bff;
+  color: white;
+  border-color: #007bff;
+}
+
+.management-wrapper.dark-theme .btn-primary,
+.management-content.dark-theme .btn-primary,
+.dark-theme .btn-primary {
+  background: var(--theme-primary, #60a5fa) !important;
+  color: #071021 !important;
+  border-color: var(--theme-primary, #60a5fa) !important;
+}
+
+.btn-primary:hover {
+  background: #0056b3;
+  border-color: #0056b3;
+}
+
+.btn-secondary {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+.btn-secondary:hover {
+  background: #5a6268;
+  border-color: #5a6268;
+}
+
+.btn-small {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.8rem;
+}
+
+/* Модальные окна */
+.dialog-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.dialog {
+  background: white;
+  border-radius: 8px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.dialog h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  color: #000 !important;
+}
+
+.dialog h3 {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+  color: #1a1a1a;
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ced4da;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: border-color 0.2s;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+/* Большой диалог для пошагового процесса */
+.dialog-large {
+  max-width: 600px;
+  min-height: 400px;
+}
+
+/* Dialog-specific dark-theme overrides: keep form labels, inputs and Cancel button in light appearance */
+.management-wrapper.dark-theme .dialog,
+.management-content.dark-theme .dialog,
+.dark-theme .dialog {
+  background: #ffffff !important;
+  color: #111827 !important;
+  box-shadow: 0 4px 20px rgba(15,23,42,0.15) !important;
+}
+
+.management-wrapper.dark-theme .dialog h2,
+.management-content.dark-theme .dialog h2,
+.dark-theme .dialog h2 {
+  color: #000 !important;
+}
+
+.management-wrapper.dark-theme .dialog h3,
+.management-content.dark-theme .dialog h3,
+.dark-theme .dialog h3 {
+  color: #000 !important;
+}
+
+.management-wrapper.dark-theme .dialog .form-group label,
+.management-content.dark-theme .dialog .form-group label,
+.dark-theme .dialog .form-group label {
+  color: #374151 !important;
+}
+
+.management-wrapper.dark-theme .dialog .form-group input,
+.management-wrapper.dark-theme .dialog .form-group select,
+.management-wrapper.dark-theme .dialog .form-group textarea,
+.management-content.dark-theme .dialog .form-group input,
+.management-content.dark-theme .dialog .form-group select,
+.management-content.dark-theme .dialog .form-group textarea,
+.dark-theme .dialog .form-group input,
+.dark-theme .dialog .form-group select,
+.dark-theme .dialog .form-group textarea {
+  background: #ffffff !important;
+  border: 1px solid #e5e7eb !important;
+  color: #111827 !important;
+}
+
+/* Make the Cancel button visible (light style) inside dialogs when dark theme is active */
+.management-wrapper.dark-theme .dialog .btn,
+.management-content.dark-theme .dialog .btn,
+.dark-theme .dialog .btn {
+  background: #f3f4f6 !important;
+  color: #111827 !important;
+  border-color: #e5e7eb !important;
+}
+
+.management-wrapper.dark-theme .dialog .btn-primary,
+.management-content.dark-theme .dialog .btn-primary,
+.dark-theme .dialog .btn-primary {
+  background: #007bff !important;
+  color: #fff !important;
+  border-color: #007bff !important;
+}
+
+/* Заголовок секции с кнопкой */
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.section-header h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1a1a1a;
+}
+
+/* Группа кнопок в header филиала */
+.branch-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.branch-actions .btn {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Стили для радио-кнопок */
+.form-group label input[type="radio"] {
+  margin-right: 0.5rem;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.form-group label:has(input[type="radio"]) {
+  font-weight: normal;
+}
+
+/* Группы пользователей по referred_by */
+.user-group {
+  margin-bottom: 1.5rem;
+}
+
+.user-group-header {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f0f0f0;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  color: #333;
+}
+
+/* user-group-header dark theme adjustments */
+.management-wrapper.dark-theme .user-group-header,
+.management-content.dark-theme .user-group-header,
+.dark-theme .user-group-header,
+body[data-theme="dark"] .user-group-header {
+  background: var(--theme-card-bg, #0b1228) !important;
+  color: var(--theme-text, #f9fafb) !important;
+  border: 1px solid var(--theme-border, rgba(255,255,255,0.06)) !important;
+}
+
+.management-wrapper.dark-theme .user-group-count,
+.management-content.dark-theme .user-group-count,
+.dark-theme .user-group-count,
+body[data-theme="dark"] .user-group-count {
+  color: var(--theme-subtext, #9aa8b8) !important;
+}
+
+.user-group-count {
+  color: #666;
+  font-size: 0.85rem;
+}
+
+.user-group .user-card {
+  margin-left: 1rem;
+}

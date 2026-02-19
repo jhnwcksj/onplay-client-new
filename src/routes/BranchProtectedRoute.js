@@ -4,15 +4,25 @@ import AccessDenied from "../pages/AccessDenied";
 
 export default function BranchProtectedRoute({ children }) {
   const location = useLocation();
+  // cached current user (may be null)
+  const storedUser = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+  const currentRole = storedUser?.role;
   const [userBranches, setUserBranches] = useState(null);
   const [loadingBranches, setLoadingBranches] = useState(true);
   const [branchAccessDenied, setBranchAccessDenied] = useState(false);
 
   useEffect(() => {
-    const stored = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
-    const uid = stored?.id || localStorage.getItem('userId');
+    const uid = storedUser?.id || localStorage.getItem('userId');
     const token = localStorage.getItem('token');
     if (!uid) return;
+
+    // Admins bypass branch-level checks
+    if (currentRole === 'admin') {
+      setUserBranches([]);
+      setLoadingBranches(false);
+      setBranchAccessDenied(false);
+      return;
+    }
 
     let mounted = true;
     setLoadingBranches(true);
@@ -53,6 +63,8 @@ export default function BranchProtectedRoute({ children }) {
       const params = new URLSearchParams(location.search);
       const branchId = params.get('branchId');
       if (!branchId) { setBranchAccessDenied(false); return; }
+      // Admin bypass: always allow
+      if (currentRole === 'admin') { setBranchAccessDenied(false); return; }
       if (userBranches === null) return; // not yet loaded
       const found = userBranches.find(b => String(b.branch_id || b.id || b.branchId) === String(branchId));
       setBranchAccessDenied(!Boolean(found));

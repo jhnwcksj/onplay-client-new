@@ -2,91 +2,238 @@
 .login-wrapper {
   display: flex;
   justify-content: center;
-  padding-top: 80px;
+  align-items: center;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   font-family: 'Inter', system-ui, -apple-system, "Segoe UI", sans-serif;
+  padding: 20px;
 }
 
 /* Контейнер формы */
 .login-container {
-  width: 380px;
+  width: 100%;
+  max-width: 460px;
+  background: white;
+  border-radius: 16px;
+  padding: 40px 48px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
 }
 
-/* Заголовок */
-.login-title {
-  font-size: 36px;
-  font-weight: 800;
-  margin-bottom: 25px;
+/* Логотип GreenMind */
+.login-brand {
+  font-size: 42px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: #1a3a2e;
+  text-align: center;
 }
 
-/* Почта */
-.login-email{
-    margin-bottom: 20px;
-}
-/* Пароль */
-.login-password{
-    margin-bottom: 20px;
+/* Подзаголовок */
+.login-subtitle {
+  font-size: 16px;
+  color: #64748b;
+  text-align: center;
+  margin: 0 0 32px 0;
 }
 
+/* Вкладки */
+.login-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 32px;
+  background: #f1f5f9;
+  padding: 6px;
+  border-radius: 10px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 12px 16px;
+  border: none;
+  background: transparent;
+  font-size: 15px;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.2s;
+}
+
+.login-tab.active {
+  background: white;
+  color: #1a3a2e;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.login-tab:hover:not(.active) {
+  color: #1a3a2e;
+}
+
+/* Поля формы */
+.login-field {
+  margin-bottom: 20px;
+}
+
+.phone-row {
+  display: flex;
+  gap: 8px;
+}
+
+.phone-row .login-input {
+  width: auto; /* allow flex children to size properly */
+}
+
+.login-input-code {
+  flex: 0 0 68px;
+  width: 68px;
+  padding: 8px 6px;
+  text-align: center;
+  box-sizing: border-box;
+  border-radius: 10px;
+}
+
+.login-input-phone {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.code-select-wrapper {
+  position: relative;
+  width: 68px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.code-select-wrapper .native-select {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  z-index: 2;
+  cursor: pointer;
+}
+
+.code-select-wrapper .code-only {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 1;
+  box-sizing: border-box;
+  padding: 10px 8px;
+  border: 2px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 10px;
+  font-weight: 600;
+  color: #334155;
+  transition: all 0.2s;
+}
+
+.code-select-wrapper:hover .code-only {
+  border-color: #cbd5e1;
+  background: white;
+}
+
+.code-select-wrapper .flag-emoji {
+  font-size: 18px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+}
+
+.code-select-wrapper .code-text {
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 /* Подписи к полям */
 .login-label {
+  display: block;
   font-size: 14px;
-  margin-bottom: 6px;
+  margin-bottom: 8px;
   font-weight: 500;
-  color: #555;
+  color: #334155;
 }
 
 /* Поля ввода */
 .login-input {
   width: 100%;
-  padding: 12px 14px;
-  border-radius: 6px;
-  border: 1px solid #cfd8dc;
-  font-size: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  font-size: 15px;
   box-sizing: border-box;
-  margin-top: 5px;
+  transition: border-color 0.2s;
+  background: #f8fafc;
 }
 
 .login-input:focus {
-  border-color: #2196f3;
+  border-color: #475569;
   outline: none;
+  background: white;
 }
 
-/* Блок с чекбоксом и "не помню пароль" */
-.login-extra {
+.login-input::placeholder {
+  color: #94a3b8;
+}
+
+/* Обертка для пароля с кнопкой показа */
+.login-password-wrapper {
+  position: relative;
+}
+
+.login-password-wrapper .login-input {
+  padding-right: 48px;
+}
+
+.login-password-toggle {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
   display: flex;
   align-items: center;
-  margin-top: 10px;
-  gap: 8px;
+  justify-content: center;
+  color: #64748b;
+  transition: color 0.2s;
 }
 
-/* Ссылка */
-.login-forgot {
-  margin-left: auto;
-  color: #1976d2;
-  font-size: 14px;
-  cursor: pointer;
+.login-password-toggle:hover {
+  color: #334155;
 }
 
-.login-forgot:hover {
-  text-decoration: underline;
+.login-password-toggle svg {
+  display: block;
 }
 
 /* Кнопка */
 .login-button {
   width: 100%;
-  background-color: #ffc043;
-  padding: 14px;
-  margin-top: 25px;
+  background: #475569;
+  color: white;
+  padding: 16px;
+  margin-top: 24px;
   border: none;
-  border-radius: 6px;
-  font-size: 18px;
-  font-weight: bold;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
 }
 
 .login-button:hover {
-  background-color: #ffb020;
+  background: #334155;
 }
 
 
@@ -96,40 +243,29 @@
 
 @media (max-width: 600px) {
   .login-wrapper {
-    padding-top: 40px;
-    padding-left: 20px;
-    padding-right: 20px;
+    padding: 16px;
   }
 
   .login-container {
-    width: 100%;
+    padding: 32px 24px;
   }
 
-  .login-title {
-    font-size: 28px;
-    text-align: center;
+  .login-brand {
+    font-size: 32px;
+  }
+
+  .login-subtitle {
+    font-size: 14px;
   }
 
   .login-input {
     font-size: 15px;
-    padding: 10px 12px;
+    padding: 12px 14px;
   }
 
   .login-button {
-    font-size: 16px;
-    padding: 12px;
-  }
-
-  .login-extra {
-    /* flex-direction: column; */
-    flex-direction: row;
-    align-items: flex-start;
-    gap: 6px;
-  }
-
-  .login-forgot {
-    /* margin-left: 0; */
-    float: right;
+    font-size: 15px;
+    padding: 14px;
   }
 }
 
@@ -138,12 +274,12 @@
 /* =============================== */
 
 @media (max-width: 400px) {
-  .login-title {
-    font-size: 24px;
+  .login-brand {
+    font-size: 28px;
   }
 
   .login-button {
-    font-size: 15px;
-    padding: 10px;
+    font-size: 14px;
+    padding: 12px;
   }
 }

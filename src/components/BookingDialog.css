@@ -2,7 +2,8 @@
   position: fixed;
   top: 0; left: 0; right: 0; bottom: 0;
   background: rgba(0,0,0,0.18);
-  z-index: 1000;
+  /* Must be above Sidebar (z-index:1500+) and branch menus (z-index:2000) */
+  z-index: 3000;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -14,7 +15,7 @@
   to   { background: rgba(0,0,0,0.18); }
 }
 .booking-dialog {
-  background: #fff;
+  background: var(--theme-background, #fff);
   border-radius: 18px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.18);
   display: flex;
@@ -29,6 +30,9 @@
   opacity: 0;
   transform: translateY(40px) scale(0.98);
   animation: dialogIn 0.32s cubic-bezier(.4,0,.2,1) forwards;
+  border: 1px solid var(--theme-border, transparent);
+  /* Ensure the dialog itself is above the backdrop and other UI like Sidebar */
+  z-index: 3001;
 }
 
 @keyframes dialogIn {
@@ -61,13 +65,13 @@
 }
 .booking-dialog-label {
   font-size: 14px;
-  color: #888;
+  color: var(--theme-subtext, #888);
   margin-bottom: 2px;
 }
 .booking-dialog-value {
   font-size: 16px;
   font-weight: 500;
-  color: #222;
+  color: var(--theme-text, #222);
   margin-bottom: 8px;
 }
 .booking-dialog-services-list {
@@ -107,8 +111,8 @@
   display: inline-flex;
   align-items: stretch;
   border-radius: 999px;
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border: 1px solid var(--theme-border, #e5e7eb);
+  background: var(--theme-hover, #f9fafb);
   box-shadow: 0 1px 2px rgba(15,23,42,0.05);
 }
 
@@ -122,13 +126,13 @@
   justify-content: center;
   cursor: pointer;
   font-size: 18px;
-  color: #6b7280;
+  color: var(--theme-subtext, #6b7280);
   transition: background 0.15s ease, color 0.15s ease;
 }
 
 .booking-dialog-number-btn:hover {
   /* background: rgba(76,201,243,0.08); */
-  color: #0ea5e9;
+  color: var(--theme-primary, #0ea5e9);
 }
 
 .booking-dialog-number-input {
@@ -137,32 +141,33 @@
   text-align: center;
   background: transparent;
   font-size: 15px;
+  color: var(--theme-text, #222);
 }
 .booking-dialog-service {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-border, #e5e7eb);
   border-radius: 10px;
   padding: 12px 16px;
-  background: #fafbfc;
+  background: var(--theme-card-bg, #fafbfc);
   cursor: pointer;
   transition: border 0.2s, background 0.2s;
 }
 .booking-dialog-service.selected, .booking-dialog-service:hover {
-  border: 1.5px solid #4cc9f3ff;
-  background: #e6ffff;
+  border: 1.5px solid var(--theme-primary, #4cc9f3ff);
+  background: var(--theme-hover, #e6ffff);
 }
 .booking-dialog-service-title {
   font-size: 15px;
   font-weight: 500;
-  color: #222;
+  color: var(--theme-text, #222);
 }
 .booking-dialog-service-desc {
   font-size: 13px;
-  color: #888;
+  color: var(--theme-subtext, #888);
   margin-top: 2px;
 }
 .booking-dialog-service-price {
   font-size: 14px;
-  color: #4cc9f3ff;
+  color: var(--theme-primary, #4cc9f3ff);
   font-weight: 500;
   margin-top: 4px;
 }
@@ -194,28 +199,32 @@
   box-shadow: 0 1px 4px rgba(248,113,113,0.35);
 }
 .booking-dialog-input {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-input-border, #e5e7eb);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 15px;
   outline: none;
+  background: var(--theme-input-bg, #fff);
+  color: var(--theme-text, #222);
   /* margin-bottom: 8px; */
 }
 .booking-dialog-input:focus {
-  border-color: #4cc9f3ff;
+  border-color: var(--theme-primary, #4cc9f3ff);
 }
 
 .booking-dialog-input-duration {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--theme-input-border, #e5e7eb);
   border-radius: 8px;
   padding: 8px 12px;
   font-size: 15px;
   outline: none;
+  background: var(--theme-input-bg, #fff);
+  color: var(--theme-text, #222);
   /* margin-top: -20px; */
   margin-bottom: 8px;
 }
 .booking-dialog-input-duration:focus {
-  border-color: #4cc9f3ff;
+  border-color: var(--theme-primary, #4cc9f3ff);
 }
 
 .booking-dialog-close {
@@ -225,13 +234,13 @@
   background: none;
   border: none;
   font-size: 28px;
-  color: #bbb;
+  color: var(--theme-subtext, #bbb);
   cursor: pointer;
   z-index: 2;
 }
 .booking-dialog-submit {
-  background: #ffd600;
-  color: #222;
+  background: var(--theme-primary, #ffd600);
+  color: var(--theme-background, #222);
   border: none;
   border-radius: 8px;
   font-size: 17px;
@@ -242,8 +251,8 @@
   transition: background 0.2s;
 }
 .booking-dialog-submit:disabled {
-  background: #f3f4f6;
-  color: #aaa;
+  background: var(--theme-hover, #f3f4f6);
+  color: var(--theme-subtext, #aaa);
   cursor: not-allowed;
 }
 
@@ -285,11 +294,12 @@
   top: 44px;
   left: 0;
   z-index: 30;
-  background: #fff;
+  background: var(--theme-background, #fff);
   border-radius: 18px;
   box-shadow: 0 8px 32px rgba(15,23,42,0.16);
   padding: 16px 18px 14px 18px;
   min-width: 280px;
+  border: 1px solid var(--theme-border, transparent);
 }
 
 .booking-dialog-calendar-header {
@@ -299,14 +309,15 @@
   gap: 8px;
   margin-bottom: 8px;
   font-size: 14px;
+  color: var(--theme-text, #222);
 }
 
 .booking-dialog-calendar-nav-btn {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
+  border: 1px solid var(--theme-border, #e5e7eb);
+  background: var(--theme-hover, #f9fafb);
   cursor: pointer;
   font-size: 16px;
-  color: #6b7280;
+  color: var(--theme-subtext, #6b7280);
   padding: 0;
   width: 28px;
   height: 28px;
@@ -318,13 +329,14 @@
 }
 
 .booking-dialog-calendar-nav-btn:hover {
-  background: #e5e7eb;
-  border-color: #d1d5db;
-  color: #111827;
+  background: var(--theme-secondary, #e5e7eb);
+  border-color: var(--theme-border, #d1d5db);
+  color: var(--theme-text, #111827);
 }
 
 .booking-dialog-calendar-title {
   font-weight: 600;
+  color: var(--theme-text, #222);
 }
 
 .booking-dialog-calendar-weekdays {
@@ -333,7 +345,7 @@
   gap: 4px;
   margin-bottom: 4px;
   font-size: 11px;
-  color: #9ca3af;
+  color: var(--theme-subtext, #9ca3af);
   text-align: center;
 }
 
@@ -350,6 +362,7 @@
   font-size: 13px;
   cursor: pointer;
   position: relative;
+  color: var(--theme-text, #222);
 }
 
 .booking-dialog-calendar-day-dot {
@@ -360,17 +373,17 @@
   width: 4px;
   height: 4px;
   border-radius: 50%;
-  background: #3b82f6;
+  background: var(--theme-primary, #3b82f6);
 }
 
 .booking-dialog-calendar-day-selected {
-  background: #ffd600;
-  color: #111827;
+  background: var(--theme-primary, #ffd600);
+  color: var(--theme-background, #111827);
   font-weight: 700;
 }
 
 .booking-dialog-calendar-day-today:not(.booking-dialog-calendar-day-selected) {
-  border: 1px solid #ffd600;
+  border: 1px solid var(--theme-primary, #ffd600);
 }
 
 /* Время: красивые инпуты и выпадающий список */
@@ -384,7 +397,9 @@
   /* чуть меньше, средний размер */
   border-radius: 8px;
   border-width: 1.5px;
-  border-color: #e5e7eb;
+  border-color: var(--theme-input-border, #e5e7eb);
+  background: var(--theme-input-bg, #fff);
+  color: var(--theme-text, #222);
   /* padding-right: 26px; */
   text-align: center;
   /* height: 32px; */
@@ -392,7 +407,7 @@
 }
 
 .booking-dialog-time-input:focus {
-  border-color: #4cc9f3ff;
+  border-color: var(--theme-primary, #4cc9f3ff);
   box-shadow: 0 0 0 1px #ffd60022;
 }
 
@@ -403,7 +418,7 @@
   transform: translateY(-50%);
   border: none;
   background: transparent;
-  color: #bbb;
+  color: var(--theme-subtext, #bbb);
   cursor: pointer;
   font-size: 14px;
   padding: 0;
@@ -416,8 +431,9 @@
   left: 0;
   width: 100%;
   z-index: 100;
-  background: #fff;
+  background: var(--theme-background, #fff);
   /* border: 1.5px solid #ffd600; */
+  border: 1px solid var(--theme-border, transparent);
   border-radius: 12px;
   max-height: 220px;
   overflow-y: auto;
@@ -432,19 +448,198 @@
   padding: 6px 12px;
   font-size: 14px;
   cursor: pointer;
-  border-bottom: 1px solid #f3f4f6;
-  background: #fff;
+  border-bottom: 1px solid var(--theme-border, #f3f4f6);
+  background: var(--theme-background, #fff);
+  color: var(--theme-text, #222);
 }
 
 .booking-dialog-time-option:hover {
-  background: #f0f0f0;
+  background: var(--theme-hover, #f0f0f0);
 }
 
 .booking-dialog-time-option-selected {
-  background: #e6feff;
+  background: var(--theme-secondary, #e6feff);
 }
 
 .booking-dialog-time-option-check {
   font-size: 14px;
-  color: #222;
+  color: var(--theme-text, #222);
 }
+
+/* Color selector */
+.booking-color-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  user-select: none;
+  padding: 0 8px;
+  height: 36px;
+  border-radius: 6px;
+  border: 1px solid var(--theme-input-border, #e5e7eb);
+  background: var(--theme-input-bg, #fff);
+}
+.booking-color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 4px;
+  border: 1px solid var(--theme-border, #e5e7eb);
+  margin-right: 4px;
+}
+.booking-color-list {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 100%;
+  margin-top: 4px;
+  max-height: 260px;
+  overflow-y: auto;
+  background: var(--theme-background, #fff);
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(15,23,42,0.18);
+  z-index: 30;
+  padding: 4px;
+}
+.booking-color-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  background: transparent;
+}
+.booking-color-item.selected { background: rgba(59,130,246,0.08); }
+
+/* Selected service card */
+.booking-dialog-selected-service-card {
+  background: var(--theme-card-bg, #fafbfc);
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  margin-bottom: 16px;
+}
+.booking-dialog-selected-service-title { font-weight: 600; font-size: 18px; margin-bottom: 12px; color: var(--theme-text, #222); }
+.booking-dialog-selected-service-price { color: var(--theme-primary, #4cc9f3ff); font-weight: 500; font-size: 16px; margin-bottom: 16px; }
+
+/* Status buttons */
+.booking-status-btn {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: var(--theme-hover, #f3f4f6);
+  color: var(--theme-text, #222);
+  cursor: pointer;
+  font-weight: 500;
+}
+.booking-status-btn.active { box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+
+/* Country code button and dropdown */
+.booking-country-button {
+  padding: 0 8px;
+  background: var(--theme-hover, #f3f4f6);
+  border: 1px solid var(--theme-input-border, #e5e7eb);
+  border-radius: 6px 0 0 6px;
+  height: 36px;
+  line-height: 36px;
+  font-weight: 500;
+  font-size: 15px;
+  cursor: pointer;
+  border-right: none;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 2;
+}
+.booking-country-caret { font-size: 13px; margin-left: 4px; }
+.booking-country-dropdown {
+  position: absolute;
+  left: 0;
+  top: 40px;
+  background: var(--theme-background, #fff);
+  border: 1px solid var(--theme-input-border, #e5e7eb);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  z-index: 100;
+  max-height: 320px;
+  overflow-y: auto;
+  min-width: 220px;
+}
+.booking-country-item {
+  padding: 7px 12px;
+  cursor: pointer;
+  background: transparent;
+  font-weight: 400;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.booking-country-item.selected { background: var(--theme-secondary, #eaf6ff); font-weight: 600; }
+.booking-country-code { min-width: 38px; color: var(--theme-text, #222); }
+
+/* Button open / active state and code emphasis */
+.booking-country-button.open {
+  background: var(--theme-primary, #eaf6ff);
+  border-color: var(--theme-primary, #e5e7eb);
+  color: var(--theme-inverse-text, #111827);
+}
+.booking-country-button .booking-country-code { color: inherit; font-weight: 600; }
+
+
+/* Dark theme overrides for booking dialog */
+.booking-dialog.dark-theme {
+  background: #0b1228;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--theme-text, #e6eef7);
+  box-shadow: none;
+}
+.booking-dialog.dark-theme .booking-dialog-label { color: var(--theme-subtext, #9aa8b8); }
+.booking-dialog.dark-theme .booking-dialog-value { color: var(--theme-text, #e6eef7); }
+.booking-dialog.dark-theme .booking-dialog-col-center { background: transparent; }
+.booking-dialog.dark-theme .booking-dialog-input,
+.booking-dialog.dark-theme .booking-dialog-input-date,
+.booking-dialog.dark-theme .booking-dialog-input-duration,
+.booking-dialog.dark-theme .booking-dialog-time-input,
+.booking-dialog.dark-theme .booking-dialog-time-option,
+.booking-dialog.dark-theme .booking-dialog-time-list,
+.booking-dialog.dark-theme .booking-dialog-calendar,
+.booking-dialog.dark-theme .booking-dialog-service {
+  background: #071621;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--theme-text, #e6eef7);
+}
+.booking-dialog.dark-theme .booking-dialog-service.selected, .booking-dialog.dark-theme .booking-dialog-service:hover {
+  background: rgba(127,179,255,0.06);
+  border-color: rgba(127,179,255,0.12);
+}
+.booking-dialog.dark-theme .booking-dialog-delete-service-btn { background: rgba(255,255,255,0.02); color: #fca5a5; box-shadow: none; border: 1px solid rgba(255,255,255,0.03); }
+.booking-dialog.dark-theme .booking-dialog-close { color: var(--theme-subtext); }
+.booking-dialog.dark-theme .booking-dialog-calendar-day-selected { background: var(--theme-primary, #7fb3ff); color: #0d0d0d; }
+.booking-dialog.dark-theme .booking-dialog-calendar-day-today:not(.booking-dialog-calendar-day-selected) { border-color: var(--theme-primary, #7fb3ff); }
+.booking-dialog.dark-theme .booking-dialog-submit { background: var(--theme-primary, #ffd600); color: #0d0d0d; }
+.booking-dialog.dark-theme .booking-dialog-submit:disabled { background: rgba(255,255,255,0.02); color: var(--theme-subtext, #9aa8b8); }
+
+.booking-dialog.dark-theme .booking-dialog-number-control { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+.booking-dialog.dark-theme .booking-dialog-number-btn { color: var(--theme-subtext); }
+.booking-dialog.dark-theme .booking-dialog-time-option:hover { background: rgba(255,255,255,0.02); }
+
+/* Dark overrides for new controls */
+.booking-dialog.dark-theme .booking-color-toggle,
+.booking-dialog.dark-theme .booking-color-list,
+.booking-dialog.dark-theme .booking-color-item,
+.booking-dialog.dark-theme .booking-color-swatch {
+  background: #071621;
+  border: 1px solid rgba(255,255,255,0.06);
+  color: var(--theme-text, #e6eef7);
+}
+.booking-dialog.dark-theme .booking-color-item.selected { background: rgba(127,179,255,0.06); }
+.booking-dialog.dark-theme .booking-dialog-selected-service-card { background: rgba(255,255,255,0.02); box-shadow: none; }
+.booking-dialog.dark-theme .booking-dialog-selected-service-price { color: var(--theme-primary, #7fb3ff); }
+.booking-dialog.dark-theme .booking-status-btn { background: rgba(255,255,255,0.02); color: var(--theme-subtext, #9aa8b8); }
+.booking-dialog.dark-theme .booking-status-btn.active { box-shadow: 0 6px 18px rgba(0,0,0,0.18); }
+.booking-dialog.dark-theme .booking-country-button { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.04); }
+.booking-dialog.dark-theme .booking-country-dropdown { background: #071621; border: 1px solid rgba(255,255,255,0.04); box-shadow: none; }
+.booking-dialog.dark-theme .booking-country-item { color: var(--theme-text, #e6eef7); }
+.booking-dialog.dark-theme .booking-country-item.selected { background: rgba(127,179,255,0.06); }
+.booking-dialog.dark-theme .booking-country-button.open { background: rgba(127,179,255,0.08); border-color: rgba(127,179,255,0.12); color: var(--theme-text, #e6eef7); }
+.booking-dialog.dark-theme .booking-country-button .booking-country-code { color: #fff; }

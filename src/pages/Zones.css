@@ -1,11 +1,14 @@
-.zones-content{flex:1;padding:28px 32px;background:#f8fafc}
+.zones-content{flex:1;padding:28px 32px;background:var(--theme-page-background, #f8fafc)}
+.zones-no-branch{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;padding:40px}
+.zones-no-branch h2{margin:0 0 16px;font-size:24px;color:var(--theme-text, #111827)}
+.zones-no-branch p{margin:8px 0;font-size:16px;color:#6b7280;max-width:500px}
 .zones-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-.zones-header h1{margin:0;font-size:22px;color:#111827}
+.zones-header h1{margin:0;font-size:22px;color:var(--theme-text, #111827)}
 .zones-actions{margin-left:auto}
 .btn-primary{background:#ffcc00;border:none;padding:8px 14px;border-radius:8px;color:#000;font-weight:600}
-.zones-panel{background:#fff;border-radius:12px;padding:20px;border:1px solid #eef2f7}
+.zones-panel{background:var(--theme-card-bg, #fff);border-radius:12px;padding:20px;border:1px solid var(--theme-border, #eef2f7)}
 .zones-search{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.zones-search input{flex:1;padding:12px;border:1px solid #eef2f6;border-radius:10px;background:#fbfdff}
+.zones-search input{flex:1;padding:12px;border:1px solid var(--theme-input-border, #eef2f6);border-radius:10px;background:var(--theme-input-bg, #fbfdff);color:var(--theme-text, #222)}
 .zones-search .btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e6e6;background:#fff}
 .zones-note{background:#f4f8fb;padding:14px;border-radius:10px;margin-bottom:12px;color:#6b7280;border:1px solid #eef6fb}
 .zones-table{border-top:1px solid #f3f6f8}
@@ -28,7 +31,7 @@
 .zone-avatar img{width:100%;height:100%;object-fit:cover;display:block}
 .zone-info{display:flex;flex-direction:column}
 .zone-title{font-weight:600;color:#0f172a}
-.zone-sub{color:#6b7280;font-size:13px}
+.zone-sub{color:var(--theme-subtext, #6b7280);font-size:13px}
 .zones-empty{padding:18px;color:#6b7280}
 .zones-empty.error{color:#b91c1c}
 .zone-services-cell{
@@ -147,7 +150,7 @@
 	margin:0;
 	font-size:18px;
 	font-weight:700;
-	color:#111827;
+	color:#000 !important;
 }
 .zones-dialog-close{
 	border:none;
@@ -313,3 +316,89 @@
 	cursor:default;
 }
 .btn-small{background:#fff;border:1px solid #e6e6e6;padding:6px 10px;border-radius:8px}
+
+/* Dark theme overrides for zones page */
+.zones-content.dark-theme {
+	background: #071021;
+	--theme-page-background: #071021;
+	--theme-text: #e6eef7;
+	--theme-card-bg: #0b1228;
+	--theme-border: rgba(255,255,255,0.06);
+	--theme-input-border: rgba(255,255,255,0.06);
+	--theme-input-bg: #071621;
+	--theme-subtext: #9aa8b8;
+}
+
+.zones-content.dark-theme .zones-no-branch h2,
+.zones-content.dark-theme .zones-header h1,
+.zones-content.dark-theme .zone-title,
+.zones-content.dark-theme .col.services {
+	color: var(--theme-text);
+}
+
+.zones-content.dark-theme .zones-no-branch p,
+.zones-content.dark-theme .zones-empty,
+.zones-content.dark-theme .zone-sub,
+.zones-content.dark-theme .zones-dialog-field,
+.zones-content.dark-theme .zones-dialog-work-label,
+.zones-content.dark-theme .zones-dialog-close {
+	color: var(--theme-subtext);
+}
+
+.zones-content.dark-theme .zones-panel {
+	background: var(--theme-card-bg);
+	border: 1px solid var(--theme-border);
+	box-shadow: 0 8px 30px rgba(2,6,23,0.6);
+}
+
+.zones-content.dark-theme .zones-row{border-bottom:1px solid rgba(255,255,255,0.03)}
+.zones-content.dark-theme .zones-header-row{background:transparent;color:#94a3b8}
+
+.zones-content.dark-theme .zones-search input,
+.zones-content.dark-theme .zones-dialog-field input,
+.zones-content.dark-theme .zones-dialog-field textarea,
+.zones-content.dark-theme .zones-dialog-work-row input{
+	background: var(--theme-input-bg);
+	border: 1px solid var(--theme-input-border);
+	color: var(--theme-text);
+}
+
+.zones-content.dark-theme .zone-edit-btn{color:#94a3b8}
+.zones-content.dark-theme .zone-edit-btn:hover{background:rgba(255,255,255,0.02);color:#e6eef7}
+
+.zones-content.dark-theme .toggle{background:#0d1220}
+.zones-content.dark-theme .toggle.off{background:#1b2330}
+.zones-content.dark-theme .toggle.on{background:#ffd54a}
+.zones-content.dark-theme .toggle-knob{background:#0b1228}
+
+.zones-content.dark-theme .zones-dialog{background:#07121f;box-shadow:0 30px 80px rgba(2,6,23,0.8)}
+.zones-content.dark-theme .zones-dialog-header{border-bottom:1px solid rgba(255,255,255,0.04)}
+.zones-content.dark-theme .zones-dialog-header h2{color:#000 !important}
+.zones-content.dark-theme .zones-dialog-close{color:var(--theme-subtext)}
+.zones-content.dark-theme .zones-dialog-btn{background:transparent;color:var(--theme-text);border-color:rgba(255,255,255,0.04)}
+.zones-content.dark-theme .zones-dialog-btn.primary{background:#ffcc00;color:#000;border-color:#ffcc00}
+.zones-content.dark-theme .zones-dialog-btn.danger{background:#3b1e1e;color:#ffd6d6;border-color:#5c2b2b}
+
+/* Keep the add/edit zone dialog in light mode for readability */
+.zones-content.dark-theme .zones-dialog {
+	background: #ffffff;
+	box-shadow: 0 24px 60px rgba(15,23,42,0.3);
+}
+.zones-content.dark-theme .zones-dialog-header {
+	border-bottom: 1px solid #e5e7eb;
+}
+.zones-content.dark-theme .zones-dialog-header h2 { color: #111827; }
+.zones-content.dark-theme .zones-dialog-close { color: #6b7280; }
+.zones-content.dark-theme .zones-dialog-close:hover { background: #f3f4f6; color: #111827; }
+.zones-content.dark-theme .zones-dialog-body { color: #374151; }
+.zones-content.dark-theme .zones-dialog-field { color: #4b5563; }
+.zones-content.dark-theme .zones-dialog-field input,
+.zones-content.dark-theme .zones-dialog-field textarea,
+.zones-content.dark-theme .zones-dialog-work-row input {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	color: #111827;
+}
+.zones-content.dark-theme .zones-dialog-btn { background: #f3f4f6; color: #111827; border-color: #e5e7eb; }
+.zones-content.dark-theme .zones-dialog-btn.primary { background: #ffcc00; color: #000; border-color: #ffcc00; }
+.zones-content.dark-theme .zones-dialog-btn.danger { background: #fee2e2; color: #b91c1c; border-color: #fecaca; }

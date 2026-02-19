@@ -39,9 +39,12 @@
 .create-btn:hover {
 	background: #ffe066;
 }
-.services-content{flex:1;padding:28px 32px;background:#f8fafc}
+.services-content{flex:1;padding:28px 32px;background:var(--theme-page-background, #f8fafc)}
+.services-no-branch{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:400px;text-align:center;padding:40px}
+.services-no-branch h2{margin:0 0 16px;font-size:24px;color:var(--theme-text, #111827)}
+.services-no-branch p{margin:8px 0;font-size:16px;color:#6b7280;max-width:500px}
 .services-header{display:flex;align-items:center;gap:16px;margin-bottom:18px}
-.services-header h1{margin:0;font-size:22px;color:#111827}
+.services-header h1{margin:0;font-size:22px;color:var(--theme-text, #111827)}
 .services-actions{margin-left:auto}
 .btn-primary{background:#ffcc00;border:none;padding:8px 14px;border-radius:8px;color:#000;font-weight:600;cursor:pointer;transition:background 0.15s,box-shadow 0.15s,transform 0.1s}
 .btn-primary:hover{
@@ -52,9 +55,9 @@
 	transform:translateY(1px);
 	box-shadow:0 2px 6px rgba(0,0,0,0.18);
 }
-.services-panel{background:#fff;border-radius:12px;padding:20px;border:1px solid #eef2f7}
+.services-panel{background:var(--theme-card-bg, #fff);border-radius:12px;padding:20px;border:1px solid var(--theme-border, #eef2f7)}
 .services-search{display:flex;align-items:center;gap:10px;margin-bottom:14px}
-.services-search input{flex:1;padding:12px;border:1px solid #eef2f6;border-radius:10px;background:#fbfdff}
+.services-search input{flex:1;padding:12px;border:1px solid var(--theme-input-border, #eef2f6);border-radius:10px;background:var(--theme-input-bg, #fbfdff);color:var(--theme-text, #222)}
 .services-search .btn{padding:8px 12px;border-radius:8px;border:1px solid #e6e6e6;background:#fff}
 .service-table{border-top:1px solid #f3f6f8}
 .service-table-head{display:grid;grid-template-columns:2fr 1fr 1fr 1fr 1fr;padding:12px 8px;border-bottom:1px solid #f1f5f9;color:#6b7280;font-weight:600}
@@ -299,13 +302,14 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	z-index: 1100;
+	z-index: 10050;
 }
 
 .service-editor-dialog {
 	background: #ffffff;
 	border-radius: 16px;
 	box-shadow: 0 24px 60px rgba(15, 23, 42, 0.3);
+	z-index: 10060;
 	width: 1240px;
 	max-width: 95vw;
 	max-height: 90vh;
@@ -484,7 +488,7 @@
 	margin: 0;
 	font-size: 18px;
 	font-weight: 700;
-	color: #111827;
+	color: #000 !important;
 }
 
 .service-editor-close {
@@ -868,6 +872,56 @@
 	cursor: default;
 }
 
+/* Week Overrides */
+.service-editor-week-overrides-block {
+	margin-top: 16px;
+	padding: 16px;
+	border-radius: 12px;
+	background: #eff6ff;
+	border: 1px solid #93c5fd;
+}
+
+.service-editor-week-overrides-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 12px;
+}
+
+.service-editor-week-override-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 12px;
+	background: white;
+	border-radius: 8px;
+	border: 1px solid #e5e7eb;
+}
+
+.service-editor-week-override-day {
+	flex: 0 0 140px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #374151;
+}
+
+.service-editor-week-override-select {
+	flex: 1;
+	padding: 6px 12px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 14px;
+	color: #111827;
+	background: white;
+	cursor: pointer;
+}
+
+.service-editor-week-override-select:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
 .service-editor-zones-block {
 	margin-top: 6px;
 }
@@ -1038,13 +1092,14 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	z-index: 1000;
+	z-index: 10050;
 }
 
 .services-dialog {
 	background: #ffffff;
 	border-radius: 16px;
 	box-shadow: 0 20px 50px rgba(15, 23, 42, 0.25);
+	z-index: 10060;
 	width: 500px;
 	max-width: 98vw;
 	padding: 20px 22px 18px 22px;
@@ -1057,7 +1112,7 @@
 	margin: 0;
 	font-size: 18px;
 	font-weight: 700;
-	color: #111827;
+	color: #000 !important;
 }
 
 .services-dialog-header {
@@ -1236,6 +1291,123 @@
 	display: block;
 	text-align: center;
 	width: 100%;
+}
+
+/* Dark theme overrides (apply only when .services-content has .dark-theme) */
+.services-content.dark-theme {
+	background: #071021;
+	--theme-page-background: #071021;
+	--theme-text: #e6eef7;
+	--theme-card-bg: #0b1228;
+	--theme-border: rgba(255,255,255,0.06);
+	--theme-input-bg: #071621;
+	--theme-input-border: rgba(255,255,255,0.08);
+	--theme-subtext: #9aa8b8;
+	--theme-card-text: #e6eef7;
+	--theme-link: #93c5fd;
+}
+
+.services-content.dark-theme .services-no-branch h2,
+.services-content.dark-theme .services-header h1,
+.services-content.dark-theme .service-category-title,
+.services-content.dark-theme .service-category-count {
+	color: var(--theme-text);
+}
+
+.services-content.dark-theme .services-no-branch p,
+.services-content.dark-theme .services-empty,
+.services-content.dark-theme .service-category-count,
+.services-content.dark-theme .service-online-label,
+.services-content.dark-theme .service-editor-subtitle {
+	color: var(--theme-subtext);
+}
+
+.services-content.dark-theme .services-panel,
+.services-content.dark-theme .service-category-card,
+.services-content.dark-theme .service-table,
+.services-content.dark-theme .service-row {
+	background: var(--theme-card-bg);
+	border-color: var(--theme-border);
+}
+
+.services-content.dark-theme .search-input,
+.services-content.dark-theme .services-search input,
+.services-content.dark-theme .service-editor-input,
+.services-content.dark-theme .service-editor-textarea {
+	background: var(--theme-input-bg);
+	border: 1px solid var(--theme-input-border);
+	color: var(--theme-text);
+}
+
+.services-content.dark-theme .search-icon,
+.services-content.dark-theme .service-category-title,
+.services-content.dark-theme .service-category-count,
+.services-content.dark-theme .service-price,
+.services-content.dark-theme .service-duration,
+.services-content.dark-theme .service-tech,
+.services-content.dark-theme .service-staff,
+.services-content.dark-theme .service-zones {
+	color: var(--theme-card-text);
+}
+
+.services-content.dark-theme .create-btn,
+.services-content.dark-theme .btn-primary,
+.services-content.dark-theme .btn-primary:hover {
+	box-shadow: none;
+}
+
+.services-content.dark-theme .create-btn { color: #000; }
+
+.services-content.dark-theme .service-category-header,
+.services-content.dark-theme .service-category-edit-btn {
+	background: transparent;
+	border-color: rgba(255,255,255,0.03);
+	color: var(--theme-card-text);
+}
+
+.services-content.dark-theme .service-category-edit-btn { background: rgba(255,255,255,0.02); }
+
+.services-content.dark-theme .toggle { background: #1b2330; }
+.services-content.dark-theme .toggle.off { background:#1b2330; }
+.services-content.dark-theme .toggle.on { background:#ffd54a; }
+.services-content.dark-theme .toggle-knob { background: #0b1228; box-shadow:none; }
+
+.services-content.dark-theme .service-editor-backdrop { background: rgba(2,6,23,0.8); }
+.services-content.dark-theme .service-editor-dialog {
+	background: #07121f;
+	box-shadow: 0 30px 80px rgba(2,6,23,0.8);
+}
+.services-content.dark-theme .service-editor-sidebar { background: #071621; border-right: 1px solid rgba(255,255,255,0.04); }
+.services-content.dark-theme .service-editor-title { color: var(--theme-text); }
+.services-content.dark-theme .service-editor-subtitle { color: var(--theme-subtext); }
+
+
+/* Keep the "add/edit service" dialog in light mode for readability */
+.services-content.dark-theme .service-editor-dialog {
+	background: #ffffff;
+	box-shadow: 0 24px 60px rgba(15,23,42,0.3);
+}
+.services-content.dark-theme .service-editor-sidebar {
+	background: #f9fafb;
+	border-right: 1px solid #e5e7eb;
+}
+.services-content.dark-theme .service-editor-title { color: #111827; }
+.services-content.dark-theme .service-editor-subtitle { color: #6b7280; }
+.services-content.dark-theme .service-editor-input,
+.services-content.dark-theme .service-editor-textarea {
+	background: #ffffff;
+	border: 1px solid #e5e7eb;
+	color: #111827;
+}
+
+/* Force service editor header to stay black in dark theme */
+.services-content.dark-theme .service-editor-main-header h2 {
+    color: #000 !important;
+}
+
+/* Force category dialog header to stay black in dark theme */
+.services-content.dark-theme .services-dialog-header h2 {
+    color: #000 !important;
 }
 
 

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
+import { toast } from '../hooks/use-toast';
 import noImage from '../assets/images/image.png';
 import './Zones.css';
 
@@ -109,12 +110,62 @@ export default function Zones() {
       try {
         const token = localStorage.getItem('token');
         const branchId = resolveBranchId();
+        
+        // ВАЖНО: Если branchId не указан, не загружаем зоны - это предотвращает
+        // показ всех зон пользователям без доступа к филиалам
+        if (!branchId) {
+          if (!mounted) return;
+          setZones([]);
+          setError('Необходимо создать Сеть и Филиал для доступа к зонам');
+          setLoading(false);
+          return;
+        }
+
+        // Дополнительная проверка: проверяем доступ пользователя к филиалу
+        const base = process.env.REACT_APP_API_URL || '';
+        const stored = (() => { try { return JSON.parse(localStorage.getItem('user')); } catch { return null; } })();
+        const uid = stored?.id || localStorage.getItem('userId');
+        
+        // Admin bypass: allow access to any branch
+        const userRole = stored?.role || 'user';
+        if (userRole !== 'admin' && uid) {
+          // Загружаем филиалы пользователя для проверки доступа
+          const branchesEndpoints = [
+            `${base}/users/${uid}/branches`,
+            `${base}/branches?userId=${uid}`,
+            `${base}/branches?user_id=${uid}`,
+          ];
+          
+          let userHasAccess = false;
+          for (const endpoint of branchesEndpoints) {
+            try {
+              const res = await fetch(endpoint, { headers: token ? { Authorization: `Bearer ${token}` } : {} });
+              if (res.ok) {
+                const data = await res.json();
+                const branches = Array.isArray(data) ? data : (data.branches || data.rows || []);
+                const found = branches.find(b => String(b.branch_id || b.id || b.branchId) === String(branchId));
+                if (found) {
+                  userHasAccess = true;
+                  break;
+                }
+              }
+            } catch {}
+          }
+          
+          if (!userHasAccess) {
+            if (!mounted) return;
+            setZones([]);
+            setError('');
+            setLoading(false);
+            return;
+          }
+        }
+        
         const q = branchId ? `?branchId=${encodeURIComponent(branchId)}` : '';
 
         // In dev environment the frontend runs on :3000 and backend on :5000.
         // Use explicit backend URL when developing locally to avoid getting
         // served the React index.html (HTML) which causes JSON parse errors.
-        const base = process.env.REACT_APP_API_URL || '';
         const url = `${base}/zones${q}`;
 
         const res = await fetch(url, {
@@ -269,6 +320,11 @@ export default function Zones() {
       if (!res.ok) {
         const text = await res.text();
         const action = isEdit ? 'сохранении' : 'создании';
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: `Не удалось ${isEdit ? 'сохранить' : 'создать'} зону`
+        });
         throw new Error(`Ошибка при ${action} зоны: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
@@ -284,6 +340,12 @@ export default function Zones() {
           );
         }
         return [...list, saved];
+      });
+
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: `Зона ${isEdit ? 'обновлена' : 'создана'}`
       });
 
       handleCloseZoneDialog();
@@ -314,12 +376,23 @@ export default function Zones() {
 
       if (!res.ok) {
         const text = await res.text();
+        toast({
+          variant: 'destructive',
+          title: 'Ошибка',
+          description: 'Не удалось удалить зону'
+        });
         throw new Error(`Ошибка при удалении зоны: ${res.status} ${res.statusText} ${text ? '- ' + text : ''}`);
       }
 
       setZones(prev => {
         const list = Array.isArray(prev) ? prev : [];
         return list.filter(z => (z.zone_id || z.id) !== zoneId);
+      });
+
+      toast({
+        variant: 'success',
+        title: 'Успешно',
+        description: 'Зона удалена'
       });
 
       handleCloseZoneDialog();
@@ -388,11 +461,60 @@ export default function Zones() {
             )
           : prev
       );
-      alert(e.message || 'Не удалось изменить онлайн-запись зоны');
+      toast({ title: 'Ошибка', description: e.message || 'Не удалось изменить онлайн-запись зоны', variant: 'destructive' });
     } finally {
       setTogglingZoneId(null);
     }
   };
+
+  // Determine whether the current app theme/background is dark and respond to changes
+  const darkThemeKeys = React.useMemo(() => new Set(['dark', 'purple', 'ocean', 'sunset']), []);
+  const [isDarkTheme, setIsDarkTheme] = useState(() => {
+    try {
+      const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+      if (cssText && cssText.startsWith('#')) {
+        const rgb = parseInt(cssText.slice(1), 16);
+        const r = (rgb >> 16) & 0xff;
+        const g = (rgb >> 8) & 0xff;
+        const b = rgb & 0xff;
+        const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return lum > 0.7; // light text -> dark background
+      }
+      const saved = localStorage.getItem('appTheme') || 'light';
+      return darkThemeKeys.has(saved);
+    } catch {
+      return false;
+    }
+  });
+
+  useEffect(() => {
+    const handler = (e) => {
+      try {
+        if (e && e.detail && typeof e.detail.isDark !== 'undefined') {
+          setIsDarkTheme(Boolean(e.detail.isDark));
+          return;
+        }
+        const cssText = getComputedStyle(document.documentElement).getPropertyValue('--theme-text').trim();
+        if (cssText && cssText.startsWith('#')) {
+          const rgb = parseInt(cssText.slice(1), 16);
+          const r = (rgb >> 16) & 0xff;
+          const g = (rgb >> 8) & 0xff;
+          const b = rgb & 0xff;
+          const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+          setIsDarkTheme(lum > 0.7);
+          return;
+        }
+        const saved = localStorage.getItem('appTheme') || 'light';
+        setIsDarkTheme(darkThemeKeys.has(saved));
+      } catch {}
+    };
+    window.addEventListener('appThemeChanged', handler);
+    return () => window.removeEventListener('appThemeChanged', handler);
+  }, [darkThemeKeys]);
+
+  const userName = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь';
+  const userEmail = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com';
+  const userRole = localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).role || 'user' : 'user';
 
   return (
     <div className="timetable-wrapper">
@@ -401,13 +523,22 @@ export default function Zones() {
         setCalendarDate={() => {}}
         selectedDate={new Date()}
         setSelectedDate={() => {}}
-        userName={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).name : 'Пользователь'}
-        userEmail={localStorage.getItem('user') ? JSON.parse(localStorage.getItem('user')).email : 'email@example.com'}
+        userName={userName}
+        userEmail={userEmail}
+        userRole={userRole}
         loadingUser={false}
         userError={null}
       />
 
-      <div className="zones-content">
+      <div className={`zones-content ${isDarkTheme ? 'dark-theme' : ''}`}>
+        {!resolveBranchId() ? (
+          <div className="zones-no-branch">
+            <h2>Необходимо создать сеть и филиал</h2>
+            <p>Для работы с зонами требуется сначала создать сеть и филиал.</p>
+            <p>Перейдите в настройки для создания сети и филиала.</p>
+          </div>
+        ) : (
+          <>
         <div className="zones-header">
           <div className="zones-burger">☰</div>
           <h1>Зоны</h1>
@@ -695,6 +826,8 @@ export default function Zones() {
           )}
           </div>
         </div>
+          </>
+        )}
       </div>
     </div>
   );

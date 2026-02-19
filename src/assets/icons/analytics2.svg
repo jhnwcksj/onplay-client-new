@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120" role="img" aria-label="Analytics icon">
+  <!-- Rounded square border -->
+  <rect x="4" y="4" width="112" height="112" rx="14" ry="14" fill="none" stroke="#222" stroke-width="5" stroke-linejoin="round"/>
+
+  <!-- Baseline (moved lower) -->
+  <line x1="14" y1="96" x2="100" y2="96" stroke="#222" stroke-width="5" stroke-linecap="round"/>
+
+  <!-- Bars (outlined) aligned to baseline at y=96 -->
+  <rect x="22" y="78" width="10" height="18" rx="1.5" fill="none" stroke="#222" stroke-width="5"/>
+  <rect x="42" y="62" width="10" height="34" rx="1.5" fill="none" stroke="#222" stroke-width="5"/>
+  <rect x="62" y="54" width="10" height="42" rx="1.5" fill="none" stroke="#222" stroke-width="5"/>
+  <rect x="82" y="34" width="10" height="62" rx="1.5" fill="none" stroke="#222" stroke-width="5"/>
+
+</svg>
