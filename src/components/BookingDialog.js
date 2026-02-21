@@ -2395,11 +2395,11 @@ export default function BookingDialog({
       {/* Диалоговое окно подтверждения изменения данных клиента */}
       {showClientConflictDialog && conflictingClient && (
         <div 
-          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+          style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
           onClick={(e) => e.stopPropagation()}
         >
           <div 
-            style={{ background: '#fff', borderRadius: 12, padding: 32, minWidth: 420, maxWidth: 600, boxShadow: '0 8px 32px #0004', position: 'relative' }}
+            style={{ background: '#fff', borderRadius: 12, padding: 32, minWidth: 420, maxWidth: 600, boxShadow: '0 8px 32px #0004', position: 'relative', zIndex: 100001 }}
             onClick={(e) => e.stopPropagation()}
           >
             {/* Кнопка закрытия */}
