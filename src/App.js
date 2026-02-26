@@ -18,6 +18,7 @@ import OnlineBooking from "./pages/OnlineBooking";
 import BookingDetails from "./pages/BookingDetails";
 import Management from "./pages/Management";
 import License from "./pages/License";
+import Portfolio from "./pages/Portfolio";
 import ProtectedRoute from "./routes/ProtectedRoute";
 import BranchProtectedRoute from "./routes/BranchProtectedRoute";
 import HomeRedirect from "./components/HomeRedirect";
@@ -108,6 +109,10 @@ function App() {
         <Route path="/booking/:slug/:publicCode" element={<OnlineBooking />} />
         <Route path="/booking-direct/:publicCode" element={<OnlineBooking />} />
         <Route path="/booking-details/:publicCode" element={<BookingDetails />} />
+        
+        {/* Публичный маршрут портфолио */}
+        <Route path="/user45926473/portfolio" element={<Portfolio />} />
+        
         <Route path="/clients" element={
           <ProtectedRoute>
             <Clients />
